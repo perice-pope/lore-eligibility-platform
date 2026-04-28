@@ -34,7 +34,7 @@ from .prompts import (
 
 log = logging.getLogger(__name__)
 
-DEFAULT_BEDROCK_MODEL = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+DEFAULT_BEDROCK_MODEL = "anthropic.claude-sonnet-4-6"
 DEFAULT_REGION = "us-east-1"
 
 
@@ -109,7 +109,7 @@ def infer_schema(
         filename: name of the file (used for context in the prompt)
         sample_rows: a list of dicts representing the first ~50 rows of the file
         mode: "bedrock" or "local" — overrides env-driven default
-        model_id: Bedrock model identifier; defaults to Claude 3.5 Sonnet
+        model_id: Bedrock model identifier; defaults to Claude Sonnet 4.6
         region: AWS region for Bedrock; defaults to us-east-1
 
     Returns:

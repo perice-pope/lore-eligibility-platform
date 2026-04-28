@@ -264,7 +264,7 @@ curl -s http://localhost:8000/v1/verify -H 'Content-Type: application/json' \
 |---|---|---|
 | `LORE_SCHEMA_INFERENCE_MODE` | `auto` | `auto` tries Bedrock, falls back to local heuristic on any error. Set `local` to force-skip Bedrock; set `bedrock` to require it. |
 | `LORE_EMBED_MODE` | `auto` | Same semantics for the entity-resolution embedder. |
-| `LORE_BEDROCK_MODEL` | `anthropic.claude-3-5-sonnet-20241022-v2:0` | Override the inference / adjudication model. |
+| `LORE_BEDROCK_MODEL` | `anthropic.claude-sonnet-4-6` | Override the inference / adjudication model. |
 | `LORE_BEDROCK_EMBED_MODEL` | `amazon.titan-embed-text-v2:0` | Override the embedding model. |
 | `LORE_PII_VAULT_BACKEND` | `local` | `local` = in-memory vault for tests / demo. `skyflow` would route to a real vault in production. |
 | `LORE_IDV_SEED_FILE` | `samples/golden_records_seed.json` | Path to the JSON file the IDV API loads as its golden-record store. |

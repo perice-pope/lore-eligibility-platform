@@ -52,9 +52,9 @@ At growth scale (10M members), assume:
 
 | Use case | Volume / mo | Model | Cost |
 |---|---|---|---|
-| Schema inference (new partner files) | ~5 calls/mo | Claude 3.5 Sonnet | <$10 |
+| Schema inference (new partner files) | ~5 calls/mo | Claude Sonnet 4.6 | <$10 |
 | Entity res — embedding generation | 10M records × 50% novel = 5M embeddings | Titan Text v2 ($0.02/1M tokens, ~50 tokens/record) | ~$5 |
-| Entity res — LLM adjudication | 5M × 10% = 500K calls × 600 input + 200 output tokens | Claude 3.5 Sonnet ($3/$15 per 1M) | ~$2,500 |
+| Entity res — LLM adjudication | 5M × 10% = 500K calls × 600 input + 200 output tokens | Claude Sonnet 4.6 ($3/$15 per 1M) | ~$2,500 |
 | Anomaly explanations & DQ alerts | ~50K calls/mo | Claude 3.5 Haiku | ~$50 |
 | **Total** | | | ~$2,600/mo |
 

@@ -32,7 +32,7 @@ from .normalize import (
 
 log = logging.getLogger(__name__)
 
-DEFAULT_LLM_MODEL = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+DEFAULT_LLM_MODEL = "anthropic.claude-sonnet-4-6"
 
 
 class Decision(str, Enum):
