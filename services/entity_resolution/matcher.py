@@ -32,7 +32,9 @@ from .normalize import (
 
 log = logging.getLogger(__name__)
 
-DEFAULT_LLM_MODEL = "anthropic.claude-sonnet-4-6"
+# Cross-region inference profile — see services/schema_inference/inference.py
+# for the rationale. The us.* prefix is required for Claude 4.x on Bedrock.
+DEFAULT_LLM_MODEL = "us.anthropic.claude-sonnet-4-6"
 
 
 class Decision(str, Enum):

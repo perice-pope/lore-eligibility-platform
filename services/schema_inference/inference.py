@@ -34,7 +34,10 @@ from .prompts import (
 
 log = logging.getLogger(__name__)
 
-DEFAULT_BEDROCK_MODEL = "anthropic.claude-sonnet-4-6"
+# Cross-region inference profile (us.* prefix is AWS-managed and required for
+# Claude 4.x family on Bedrock — direct on-demand model IDs are no longer accepted
+# for these models). The profile auto-routes to the nearest region with capacity.
+DEFAULT_BEDROCK_MODEL = "us.anthropic.claude-sonnet-4-6"
 DEFAULT_REGION = "us-east-1"
 
 
