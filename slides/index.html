@@ -1228,20 +1228,46 @@
 
     <!-- ========================= 18. LIVE DEMO ========================= -->
     <section data-background-color="#0c2229">
-      <div style="text-align: center; padding-top: 1em;">
-        <h1 style="color: var(--lore-green); font-size: 3em;">⏵ Live demo</h1>
-        <p style="color: var(--lore-soft); font-size: 1.2em; margin-top: 1em;">10 minutes · runs locally · zero AWS access required</p>
-        <div style="margin-top: 2em; text-align: left; max-width: 70%; margin-left: auto; margin-right: auto; font-size: 0.85em;">
-          <p style="color: var(--lore-soft);">Beats:</p>
-          <ol>
-            <li>Tests pass (30, sub-second)</li>
-            <li>Schema inference on a partner CSV → draft contract YAML</li>
-            <li>Entity resolution demo → 4 cases, 3 stages</li>
-            <li>IDV API → VERIFIED, INELIGIBLE, NOT_FOUND</li>
-            <li>Architecture in code → DDL masking, Soda P0 check, cleansing SQL</li>
-          </ol>
+      <div style="text-align: center;">
+        <h1 style="color: var(--lore-green); font-size: 2.8em; margin-bottom: 0.2em;">⏵ Live demo</h1>
+        <p style="color: var(--lore-soft); font-size: 1.15em; margin-top: 0.4em;">
+          10 minutes · live in AWS · real Bedrock calls
+        </p>
+      </div>
+
+      <div style="margin: 1.4em auto 0; max-width: 88%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.7em;">
+        <div class="icon-card">
+          <div class="ic">🌐</div>
+          <h4>1. Live HTTPS URL</h4>
+          <p>Hit the API on AWS — not localhost. Real Lambda + API Gateway responding.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">✅</div>
+          <h4>2. Three sign-up scenarios</h4>
+          <p>VERIFIED · INELIGIBLE · NOT_FOUND — all served from DynamoDB.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">🗄️</div>
+          <h4>3. Show the records</h4>
+          <p>Pull up the DynamoDB console — the golden records the API just queried.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">🤖</div>
+          <h4>4. Real Bedrock</h4>
+          <p>Send a sample partner CSV to Claude — get back a draft contract YAML.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">📥</div>
+          <h4>5. File lands → DB updates</h4>
+          <p>Drop a CSV in S3. Watch Lambda parse it and upsert to DynamoDB live.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">📊</div>
+          <h4>6. Latency in CloudWatch</h4>
+          <p>p99 graph in real time — operational maturity, visible.</p>
         </div>
       </div>
+
       <div class="footer-slide-num" style="color: var(--lore-soft);">18 / 27</div>
     </section>
 
