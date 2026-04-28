@@ -44,6 +44,7 @@ on incremental updates and 99.95% availability on the verification API.
 
 ```mermaid
 flowchart LR
+    %% --- Sources ---
     subgraph Partners["Partner sources"]
         P1[Employer SFTP<br/>CSV nightly]
         P2[Payer API<br/>JSON near-real-time]
@@ -51,58 +52,86 @@ flowchart LR
         P4[Broker DB<br/>CDC stream]
     end
 
-    subgraph Ingest["Landing & Ingest (AWS)"]
-        TF[AWS Transfer Family<br/>SFTP]
-        AG[API Gateway<br/>+ Lambda]
-        S3R[(S3 Raw / Bronze<br/>Iceberg)]
-        MSK[MSK / Debezium<br/>CDC topics]
+    %% --- Ingest ---
+    subgraph Ingest["Ingest (AWS)"]
+        TF[AWS Transfer Family<br/>managed SFTP]
+        AG[API Gateway + λ<br/>JSON push]
+        MSK[MSK + Debezium<br/>row-level CDC]
     end
 
-    subgraph AI["AI Services (Bedrock)"]
-        SI[Schema Inference<br/>Claude]
-        ER[Entity Resolution<br/>Embeddings + LLM]
+    %% --- Landing & lake ---
+    subgraph Lake["Data lake (S3 + Iceberg)"]
+        S3R[(S3 Raw landing<br/>per-partner KMS CMK)]
+        BR[(Bronze · Iceberg<br/>schema-on-read)]
+        SI[(Silver · Iceberg<br/>tokens-only)]
     end
 
-    subgraph Process["Cleanse & Curate"]
-        EMR[EMR Serverless / Glue]
-        DBT[dbt on Snowflake]
-        SODA[Soda Data Quality]
+    %% --- Processing ---
+    subgraph Process["Cleanse · Tokenize · Resolve"]
+        EMR[EMR Serverless / Glue<br/>Spark cleansing]
+        SKY[Skyflow Vault<br/>format-preserving tokenization]
+        ER[Entity Resolution<br/>Bedrock Titan + Claude]
     end
 
-    subgraph PII["PII Vault"]
-        SKY[Skyflow Vault<br/>tokenization]
-        KMS[AWS KMS CMK<br/>per partner]
+    %% --- Curated & hot path ---
+    subgraph Serve["Source of truth"]
+        GOLD[(Gold · Snowflake<br/>masking + RLS)]
+        OUT[Outbox relay<br/>sub-minute]
+        AUR[(Aurora Postgres<br/>golden record · hot)]
+        OS[(OpenSearch<br/>vector index)]
+        IDV[IDV API<br/>FastAPI on ECS]
     end
 
-    subgraph Serve["Source of Truth"]
-        SF[(Snowflake<br/>Curated / Gold)]
-        AUR[(Aurora Postgres<br/>Golden Records)]
-        OS[(OpenSearch<br/>Vector Index)]
-    end
-
+    %% --- Consumers ---
     subgraph Apps["Consumers"]
-        IDV[Identity Verification<br/>FastAPI on ECS]
-        APP[Lore Mobile App]
-        BI[BI / Reporting]
+        APP[Lore mobile app]
+        BI[BI / reporting]
     end
 
+    %% --- AI side service used at onboarding only ---
+    SCHEMA[/"Schema inference (Bedrock + Claude)<br/><i>partner onboarding · output reviewed by human</i>"/]
+
+    %% --- Platform layer (cross-cutting) ---
+    subgraph Platform["Platform"]
+        DAG[Dagster · orchestration]
+        SODA[Soda · quality gates]
+        DD[Datadog · observability]
+        TF_IAC[Terraform · IaC]
+    end
+
+    %% --- Per-record data flow ---
     P1 --> TF --> S3R
+    P3 --> TF
     P2 --> AG --> S3R
-    P3 --> TF --> S3R
-    P4 --> MSK
-    S3R --> SI --> EMR
-    MSK --> EMR
-    EMR --> DBT --> SF
-    EMR --> ER
-    ER --> AUR
-    ER --> OS
-    DBT -.PII tokens.-> SKY
-    SKY -.envelope.-> KMS
-    SF --> BI
+    P4 --> MSK --> EMR
+    S3R --> EMR
+    EMR -- writes --> BR
+    EMR <-- tokenize --> SKY
+    EMR --> SI
+    SI --> ER
+    ER --> GOLD
+    GOLD --> OUT --> AUR
+    GOLD --> BI
+    ER -. embeddings .-> OS
     AUR --> IDV
     OS --> IDV
     IDV --> APP
-    SODA -.gates.-> DBT
+
+    %% --- Onboarding path (one-time per partner) ---
+    S3R -. sample at onboarding .-> SCHEMA
+    SCHEMA -. draft contract YAML reviewed by engineer .-> EMR
+
+    %% --- Quality + orchestration overlays ---
+    SODA -. gates promotion .-> SI
+    SODA -. gates promotion .-> GOLD
+    DAG -. orchestrates .-> EMR
+    DAG -. orchestrates .-> ER
+    DAG -. orchestrates .-> OUT
+
+    classDef ai fill:#19c39e22,stroke:#19c39e,color:#fff;
+    classDef hot fill:#f1b04c22,stroke:#f1b04c,color:#fff;
+    class ER,SCHEMA,SKY ai
+    class AUR,IDV,OUT hot
 ```
 
 See [docs/architecture.md](docs/architecture.md) for the full version with rationale on every choice.
