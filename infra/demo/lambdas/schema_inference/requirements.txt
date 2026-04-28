@@ -1,0 +1,2 @@
+# boto3 is on the Lambda runtime; the schema_inference service uses it lazily
+# only when mode != "local". Nothing else needed.

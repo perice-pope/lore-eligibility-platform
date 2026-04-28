@@ -1,0 +1,2 @@
+# boto3 + botocore are pre-installed in the Lambda Python 3.12 runtime.
+# Empty — Python stdlib + boto3 covers everything this Lambda does.

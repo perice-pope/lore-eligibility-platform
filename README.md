@@ -14,7 +14,8 @@
 | If you have… | Open |
 |---|---|
 | **45 minutes** to walk the full case study | [PRESENTATION.md](PRESENTATION.md) — section-by-section speaker script |
-| **10 minutes** for the live demo only | [DEMO.md](DEMO.md) — verified-working command-by-command runbook |
+| **10 minutes** for the live demo (local) | [DEMO.md](DEMO.md) — verified-working command-by-command runbook |
+| **10 minutes** for the live demo (real AWS) | [infra/demo/DEMO-CLOUD.md](infra/demo/DEMO-CLOUD.md) — same beats, but on a live HTTPS URL with real DynamoDB / S3 / Bedrock |
 | A browser and want **slides** | [slides/index.html](slides/index.html) — self-contained reveal.js deck (27 slides) · also at [slides/slides.marp.md](slides/slides.marp.md) for Google Slides import |
 | **5 minutes** to skim before the call | this README |
 

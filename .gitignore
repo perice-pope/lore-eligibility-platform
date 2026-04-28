@@ -32,3 +32,11 @@ local.duckdb
 # Local env
 .env
 .env.*
+
+# Cloud demo build artifacts
+infra/demo/.terraform/
+infra/demo/.terraform.lock.hcl
+infra/demo/terraform.tfstate*
+infra/demo/.terraform.tfstate.lock.info
+infra/demo/lambdas/*/build/
+infra/demo/lambdas/*/*.zip

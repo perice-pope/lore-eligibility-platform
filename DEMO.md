@@ -2,9 +2,19 @@
 
 **Total demo time: 10 minutes.**
 
-This is the script for the live-demo segment of the panel presentation. Every command
-has been verified to work. There is **no AWS access required** — Bedrock calls fall
-back to deterministic local mocks.
+There are **two paths** for the live demo segment:
+
+| Path | What the panel sees | When to use |
+|---|---|---|
+| **Local-only** *(this file)* | Everything runs on your laptop. Real Python services, local mocks for Bedrock + DynamoDB. | If you can't deploy to AWS for any reason; or as a backup if the cloud demo flakes. |
+| **Cloud (AWS)** *(see [infra/demo/DEMO-CLOUD.md](infra/demo/DEMO-CLOUD.md))* | Live HTTPS URL, real DynamoDB, real S3 file flow, real Bedrock calls when quota allows. | The recommended panel demo. Deploy with `cd infra/demo && ./deploy.sh`, tear down with `./teardown.sh`. |
+
+**The cloud demo is a strict superset of the local demo** — same code paths, same JSON
+contracts, same fallbacks. If Bedrock throttles in the cloud, the system falls back to
+the same deterministic local mock you'd use here.
+
+The rest of this file is the **local-only** runbook. Every command has been verified to
+work. There is **no AWS access required** for any step below.
 
 ---
 
