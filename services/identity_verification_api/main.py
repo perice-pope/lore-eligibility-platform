@@ -21,18 +21,16 @@ private VPC, no internet egress except to Skyflow + Bedrock VPC endpoints.
 from __future__ import annotations
 
 import logging
-import os
 import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import date
-from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from .models import HealthResponse, VerificationStatus, VerifyRequest, VerifyResponse
-from .store import GoldenRecordStore
+from .store import from_env as build_golden_record_store
 
 log = logging.getLogger("idv.api")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -51,19 +49,10 @@ _METRICS: dict[str, float] = {
 }
 
 
-def _seed_path() -> Path | None:
-    p = os.environ.get("LORE_IDV_SEED_FILE")
-    if p and Path(p).exists():
-        return Path(p)
-    default = Path(__file__).resolve().parents[2] / "samples" / "golden_records_seed.json"
-    return default if default.exists() else None
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("idv.api starting up — version=%s", VERSION)
-    seed = _seed_path()
-    app.state.store = GoldenRecordStore(backend="memory", seed_path=seed)
+    app.state.store = build_golden_record_store()
     log.info("golden record store initialized: %s", app.state.store.health())
     yield
     log.info("idv.api shutting down")
@@ -107,7 +96,7 @@ async def request_telemetry(request: Request, call_next):
 async def verify(request: Request, body: VerifyRequest):
     cid = request.state.correlation_id
     _METRICS["idv_requests_total"] += 1
-    store: GoldenRecordStore = request.app.state.store
+    store = request.app.state.store
 
     # Stage 1: deterministic lookup
     matches = store.lookup(
