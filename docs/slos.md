@@ -54,41 +54,48 @@ SLI = quantile(0.95, partner_db_commit_ts → aurora_golden_record_ts)
 
 | | |
 |---|---|
-| **What it measures** | Of all entity-resolution merges, % that are correct (per ground-truth audits) |
-| **Target** | ≥ 99.5% on monthly sampled audit |
-| **Error budget** | ≤ 0.5% wrong-merge rate; even one wrong-merge that exposes data is a P0 |
-| **Why it matters** | Wrong merge = breach. This is the SLO we'd never trade off. |
+| **What it measures** | When the system decides "these two records are the same person" and merges them, how often is that decision actually correct? |
+| **Target** | At least 99.5% correct, measured monthly |
+| **Error budget** | Fewer than 1 in 200 merges may be wrong. Even a single wrong merge that exposes one member's data to another is treated as a top-priority incident. |
+| **Why it matters** | A wrong merge means one person sees another person's healthcare info. That's a HIPAA breach. This is the one SLO we will never relax to ship faster. |
 
-Sample audit: 1,000 random merges per month, manually reviewed by two people; disagreements
-escalate to compliance.
+**How we measure it:** every month, we randomly pick 1,000 merge decisions, two people review each
+one independently, and we count how many were correct. If the two reviewers disagree, the case
+goes to Compliance for a tie-breaking review.
 
 ---
 
 ## Supporting metrics (not SLOs but watched)
 
-| Metric | Threshold | Action |
+These don't have formal error budgets, but they tell us early when something is drifting before
+it shows up in a customer-facing SLO.
+
+| Metric (in plain terms) | Healthy range | What we do if it's outside |
 |---|---|---|
-| Bulk file land → bronze parsed | p95 < 10 min | Investigate slow parse |
-| Bronze → silver Soda gate fail rate | < 1% per partner | Partner data quality conversation |
-| Silver → gold dbt build duration | < 30 min | Refactor model or scale warehouse |
-| Bedrock entity-res adjudicator p99 latency | < 4s | Switch to faster model or batch |
-| Bedrock entity-res cost per 1M decisions | < $X | Optimize prompts, switch model tier |
-| Skyflow detokenize calls per actor / day | <100 typical, alert >500 | Insider-threat signal |
-| Macie unmanaged-PII findings in raw | 0 | Investigate; data contract gap |
-| Aurora replication lag | < 5s | Page on >30s |
+| **How long it takes to parse a bulk file** after it lands in S3 | 95% of files done in under 10 min | Investigate the slow parse — usually a stuck Spark job or an outsized file |
+| **Quality-check fail rate** on incoming records (per partner) | Under 1% of rows fail | Have a data-quality conversation with that partner's success manager |
+| **How long the nightly dbt build takes** to refresh Snowflake | Under 30 min | Either refactor the slow model or scale up the Snowflake warehouse |
+| **AI adjudicator response time** when matching a tricky record | 99% of calls return within 4 seconds | Switch to a faster model tier or batch the requests |
+| **AI cost per 1 million entity-resolution decisions** | Under our agreed monthly cap | Tune the prompts, drop to a cheaper Claude tier (Haiku), or cache more aggressively |
+| **Skyflow PII vault — number of detokenize calls per person, per day** | Typically under 100; alert at over 500 | Possible insider-threat signal — escalate to security |
+| **AWS Macie scans for PII the system didn't expect** | Should always be zero | If anything is found, our data contract has a gap and we investigate |
+| **Aurora replication lag** between writer and read replicas | Under 5 seconds | Page on-call if it stays above 30 seconds — read traffic is starting to see stale data |
 
 ---
 
-## Error budget policy
+## Error budget policy — when we slow down feature work
 
-When the budget for any of SLO 1–4 is **>50% consumed in the period**, we:
+We don't just track the budget; we act on it. When more than half the budget for any of SLO 1–4
+is used up before the period is over, here's what happens:
 
-1. Halt non-critical feature work in the affected service.
-2. Run a focused reliability iteration (1-2 weeks).
-3. Document root cause and remediation in a postmortem-style doc.
-4. Resume feature work only when budget is replenished or a roadmap waiver is signed off.
+1. **Stop non-essential feature work** in that service area. Bug fixes and security work continue.
+2. **Spend a focused 1–2 weeks** on whatever's eating the budget — debugging, scaling, refactoring.
+3. **Write up the root cause and the fix** in a blameless postmortem so the team learns from it.
+4. **Restart feature work** only after the budget is replenished, or after the leadership team
+   explicitly signs off on a documented exception.
 
-This is unfun but it's the only way the SLO is real. Without enforcement, SLOs are theater.
+This is unfun, especially when it slows a launch. It's also the only way the SLO is real.
+Without this rule, SLOs are decoration.
 
 ---
 
