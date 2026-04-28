@@ -26,11 +26,9 @@ style: |
 
 <!-- _class: title -->
 
-<div class="accent">Staff Data Engineer · Panel</div>
+# Partner Eligibility & Identity Verification
 
-# Trusted Partner Eligibility & Identity Verification Platform
-
-Case Study #3 — staff-engineer-scale design + working prototype
+Case Study #3
 
 **Perice Pope**
 
@@ -104,33 +102,37 @@ Everything else falls out of solving these five.
 ## Architecture — the happy path
 
 ```
-[Partner SFTP / API / DB]  →  AWS Transfer Family / API GW / Debezium
-                                     │
-                                     ▼
-                       [S3 RAW]  ──  per-partner KMS CMK
-                                     │       ┌── EventBridge → Dagster
-                                     ▼       │
-                EMR Serverless / Glue (parse + tokenize via Skyflow)
-                                     │
-                                     ▼
-                      [BRONZE — Iceberg]
-                                     │
-                                     ▼
-                      [SILVER — Iceberg, tokens-only]
-                                     │
-                Entity Resolution (Bedrock embeddings + LLM)
-                                     │
-                                     ▼
-                      [GOLD — Snowflake, masked]
-                                     │
-                                     ▼  (outbox relay, sub-minute)
-                      [Aurora Postgres — hot replica]
-                                     │
-                                     ▼
-                Identity Verification API (FastAPI on ECS Fargate)
+  Partner SFTP / API / DB
+            │
+            ▼
+  AWS Transfer Family · API GW · Debezium (CDC)        ── EventBridge ──▶ Dagster
+            │                                                                ║ orchestrates
+            ▼                                                                ║
+  [ S3 RAW ]  ── per-partner KMS CMK                                         ║
+            │                                                                ║
+            ▼                                                                ║
+  EMR Serverless / Glue  ◄── Skyflow Vault (PII tokenization)                ║
+       │           │                                                         ║
+       ▼           ▼                                                         ║
+ [ BRONZE ]   [ SILVER — tokens-only Iceberg ]                               ║
+                   │                                                         ║
+                   ▼                                                         ║
+   Entity Resolution (Bedrock embeddings + Claude adjudication)              ║
+                   │                                                         ║
+                   ▼                                                         ║
+   [ GOLD — Snowflake, masked + RLS ]                                        ║
+                   │  outbox relay (sub-minute)                              ║
+                   ▼                                                         ║
+   [ Aurora Postgres — hot replica ]                                         ║
+                   │                                                         ║
+                   ▼                                                         ║
+   Identity Verification API (FastAPI on ECS Fargate) ───────────────────── ║
+                   │
+                   ▼
+          Lore mobile app
 ```
 
-Soda gates between layers · Dagster orchestrates · OpenLineage tracks lineage · Datadog observes
+Soda gates · OpenLineage lineage · Datadog observability · Terraform IaC
 
 ---
 
@@ -481,6 +483,6 @@ Bedrock cost levers if it diverges from forecast: switch most adjudications to *
 
 # Thank you.
 
-github.com/perice-pope/lore-eligibility-platform · *private*
+github.com/perice-pope/lore-eligibility-platform · *public*
 
 **Questions?**

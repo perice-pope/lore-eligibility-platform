@@ -122,13 +122,15 @@
       background: var(--lore-deep);
       border: 1px solid var(--lore-mid);
       border-radius: 8px;
-      padding: 1em;
+      padding: 0.7em 1em;
       font-family: "SF Mono", Menlo, monospace;
-      font-size: 0.7em;
-      line-height: 1.6;
+      font-size: 0.62em;
+      line-height: 1.25;
       color: var(--lore-soft);
       white-space: pre;
+      overflow: hidden;
     }
+    .arch .accent { color: var(--lore-green); font-weight: 600; }
 
     .pill {
       display: inline-block;
@@ -181,10 +183,9 @@
 
     <!-- ========================= 1. TITLE ========================= -->
     <section class="title-slide">
-      <div class="accent">Staff Data Engineer · Panel</div>
-      <h1>Trusted Partner Eligibility &<br/>Identity Verification Platform</h1>
-      <p style="color: var(--lore-soft); font-size: 1em; max-width: 80%; margin: 0 auto;">
-        Case Study #3 — a staff-engineer-scale design and working prototype.
+      <h1>Partner Eligibility &<br/>Identity Verification</h1>
+      <p style="color: var(--lore-soft); font-size: 1.05em; margin-top: 0.6em;">
+        Case Study #3
       </p>
       <p class="by">Perice Pope</p>
     </section>
@@ -276,36 +277,36 @@
     <!-- ========================= 7. ARCHITECTURE ========================= -->
     <section>
       <h2>Architecture — the happy path</h2>
-      <div class="arch">[Partner SFTP / API / DB] → AWS Transfer Family / API GW / Debezium
-                                    │
-                                    ▼
-                     [S3 RAW] ── per-partner KMS CMK
-                                    │      ┌──── EventBridge → Dagster
-                                    ▼      │
-                  ┌───── EMR Serverless / Glue (parse + tokenize) ─┐
-                  │                                                │
-                  │        Skyflow Vault (PII tokenization)        │
-                  │                                                │
-                  ▼                                                ▼
-        [BRONZE — Iceberg]                          [SILVER — Iceberg, tokens-only]
-                                                                   │
-                                                                   ▼
-                                    Entity Resolution (Bedrock embeddings + LLM adjudication)
-                                                                   │
-                                                                   ▼
-                                                    [GOLD — Snowflake, masked]
-                                                                   │
-                                                  outbox relay (sub-minute)
-                                                                   ▼
-                                                  [Aurora Postgres — hot replica]
-                                                                   │
-                                                                   ▼
-                                                  Identity Verification API (FastAPI on ECS Fargate)
-                                                                   │
-                                                                   ▼
-                                                              Lore mobile app
+      <div class="arch">  Partner SFTP / API / DB
+            │
+            ▼
+  AWS Transfer Family · API GW · Debezium (CDC)                  ── EventBridge ──▶ Dagster
+            │                                                                          ║
+            ▼                                                                          ║  orchestrates
+  [ S3 RAW ]  ── per-partner KMS CMK                                                   ║
+            │                                                                          ║
+            ▼                                                                          ║
+  EMR Serverless / Glue  ◄── Skyflow Vault (PII tokenization)                          ║
+       │           │                                                                   ║
+       ▼           ▼                                                                   ║
+ [ BRONZE ]   [ SILVER — tokens-only Iceberg ]                                         ║
+                   │                                                                   ║
+                   ▼                                                                   ║
+   Entity Resolution  (Bedrock Titan embeddings + Claude adjudication)                 ║
+                   │                                                                   ║
+                   ▼                                                                   ║
+   [ GOLD — Snowflake, masked + RLS ]                                                  ║
+                   │                                                                   ║
+                   ▼  outbox relay (sub-minute)                                        ║
+   [ Aurora Postgres — hot replica ]                                                   ║
+                   │                                                                   ║
+                   ▼                                                                   ║
+   Identity Verification API (FastAPI on ECS Fargate)  ─────────────────────────────── ║
+                   │
+                   ▼
+          Lore mobile app
 
-  Soda gates between layers · Dagster orchestrates · OpenLineage tracks lineage · Datadog observes</div>
+  Soda gates · OpenLineage lineage · Datadog observability · Terraform IaC</div>
       <div class="footer-slide-num">07 / 27</div>
     </section>
 
@@ -763,7 +764,7 @@ retention:
     <section data-background-color="#0c2229" class="title-slide">
       <h1 style="color: var(--lore-green); font-size: 2.6em;">Thank you.</h1>
       <p style="color: var(--lore-soft); font-size: 1.05em; margin-top: 1em;">
-        github.com/perice-pope/lore-eligibility-platform <span style="color: var(--lore-mid);">·</span> private
+        github.com/perice-pope/lore-eligibility-platform <span style="color: var(--lore-mid);">·</span> public
       </p>
       <p style="color: var(--lore-soft); margin-top: 2em; font-size: 1em;">Questions?</p>
       <div class="footer-slide-num" style="color: var(--lore-soft);">27 / 27</div>
