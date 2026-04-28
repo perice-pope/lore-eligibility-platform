@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: "Iceberg landing zone — exact-as-received, partitioned by partner_id and ingest day."
+    schema: bronze
+    tables:
+      - name: partner_eligibility_raw
+        description: "Raw rows for all partners; canonical column is `raw_payload` (JSON)."
+        columns:
+          - name: _partner_id
+            description: "Owning partner."
+            tests: [not_null]
+          - name: _ingest_id
+            tests: [not_null]
+          - name: _row_hash
+            tests: [not_null]
+          - name: _ingested_at
+            tests: [not_null]
+          - name: _contract_version
+            tests: [not_null]
+      - name: partner_eligibility_quarantine
+        description: "Rows that failed schema/contract validation."

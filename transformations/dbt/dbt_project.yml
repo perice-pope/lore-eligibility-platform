@@ -1,0 +1,35 @@
+name: lore_eligibility
+version: '1.0.0'
+config-version: 2
+profile: lore_eligibility
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  current_contract_version: 1
+
+models:
+  lore_eligibility:
+    +persist_docs:
+      relation: true
+      columns: true
+    bronze:
+      +materialized: view                    # Bronze is read-through to Iceberg.
+      +tags: ['bronze', 'pii_minimized']
+    silver:
+      +materialized: incremental
+      +incremental_strategy: merge
+      +tags: ['silver', 'pii_tokens_only']
+    gold:
+      +materialized: incremental
+      +incremental_strategy: merge
+      +tags: ['gold', 'source_of_truth']
+      +cluster_by: ['zip', 'dob']

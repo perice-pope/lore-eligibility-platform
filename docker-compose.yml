@@ -1,0 +1,24 @@
+# Local-development convenience for the IDV API only.
+# The pipelines (Dagster, dbt) and infra (Terraform, MSK) are intentionally NOT in
+# this compose — they run in AWS in any real environment, and the test suite
+# already covers the core business logic without containers.
+
+services:
+  idv-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.idv
+    image: lore/idv-api:dev
+    ports:
+      - "8000:8000"
+    environment:
+      LORE_IDV_SEED_FILE: /app/samples/golden_records_seed.json
+      LORE_PII_VAULT_BACKEND: local
+      AWS_REGION: us-east-1
+    volumes:
+      - ./samples:/app/samples:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3

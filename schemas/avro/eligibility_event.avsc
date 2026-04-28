@@ -1,0 +1,42 @@
+{
+  "type": "record",
+  "namespace": "co.lore.eligibility",
+  "name": "EligibilityEvent",
+  "doc": "Normalized post-tokenization eligibility event published to silver.eligibility_events. Tier-1 PII appears as tokens only.",
+  "fields": [
+    {"name": "partner_id", "type": "string"},
+    {"name": "partner_member_id", "type": "string"},
+    {"name": "operation", "type": {"type": "enum", "name": "Operation", "symbols": ["UPSERT", "DELETE"]}},
+    {"name": "occurred_at", "type": {"type": "long", "logicalType": "timestamp-micros"}},
+    {"name": "ingested_at", "type": {"type": "long", "logicalType": "timestamp-micros"}},
+    {"name": "source_lsn", "type": ["null", "string"], "default": null},
+    {"name": "contract_version", "type": "int"},
+
+    {"name": "first_name", "type": ["null", "string"], "default": null},
+    {"name": "middle_name", "type": ["null", "string"], "default": null},
+    {"name": "last_name", "type": ["null", "string"], "default": null},
+    {"name": "suffix", "type": ["null", "string"], "default": null},
+    {"name": "dob", "type": ["null", {"type": "int", "logicalType": "date"}], "default": null},
+    {"name": "gender", "type": ["null", "string"], "default": null},
+
+    {"name": "ssn_token", "type": ["null", "string"], "default": null, "doc": "Skyflow token; never the raw SSN."},
+    {"name": "ssn_last4", "type": ["null", "string"], "default": null},
+    {"name": "email_token", "type": ["null", "string"], "default": null},
+    {"name": "phone_token", "type": ["null", "string"], "default": null},
+    {"name": "address_line_1_token", "type": ["null", "string"], "default": null},
+    {"name": "address_line_2_token", "type": ["null", "string"], "default": null},
+
+    {"name": "city", "type": ["null", "string"], "default": null},
+    {"name": "state", "type": ["null", "string"], "default": null},
+    {"name": "zip", "type": ["null", "string"], "default": null},
+    {"name": "zip4", "type": ["null", "string"], "default": null},
+
+    {"name": "effective_start_date", "type": {"type": "int", "logicalType": "date"}},
+    {"name": "effective_end_date", "type": ["null", {"type": "int", "logicalType": "date"}], "default": null},
+    {"name": "plan_code", "type": ["null", "string"], "default": null},
+    {"name": "employer_name", "type": ["null", "string"], "default": null},
+
+    {"name": "quality_score", "type": ["null", "double"], "default": null},
+    {"name": "quality_failures", "type": {"type": "array", "items": "string"}, "default": []}
+  ]
+}

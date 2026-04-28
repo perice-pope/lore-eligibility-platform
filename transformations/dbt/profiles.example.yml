@@ -1,0 +1,20 @@
+lore_eligibility:
+  target: dev
+  outputs:
+    dev:
+      # Local DuckDB stand-in. Lets devs run dbt build locally without Snowflake creds.
+      type: duckdb
+      path: ./local.duckdb
+      threads: 4
+    prod:
+      # Production target. Auth via key-pair JWT; no passwords in plaintext.
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: dbt_runner
+      private_key_path: "{{ env_var('SNOWFLAKE_KEY_PATH') }}"
+      role: DBT_ROLE
+      database: LORE_PROD
+      warehouse: WH_DBT
+      schema: silver
+      threads: 8
+      query_tag: "dbt-{{ invocation_id }}"   # tagged for cost attribution

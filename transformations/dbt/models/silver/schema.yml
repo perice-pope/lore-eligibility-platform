@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: silver_eligibility_member
+    description: |
+      Cleansed and tokenized eligibility records. One row per (partner, partner_member_id, contract_version, ingest_id).
+      Tier-1 PII appears only as Skyflow tokens. Failed quality records are flagged
+      `is_quarantined=true` and excluded from the gold layer.
+    columns:
+      - name: silver_record_id
+        description: "Surrogate primary key. Stable for a given (partner_id, partner_member_id, contract_version, ingest_id)."
+        tests:
+          - unique
+          - not_null
+      - name: partner_id
+        tests: [not_null]
+      - name: partner_member_id
+        tests: [not_null]
+      - name: dob
+        tests:
+          - not_null:
+              config:
+                where: "is_quarantined = false"
+      - name: last_name
+        tests:
+          - not_null:
+              config:
+                where: "is_quarantined = false"
+      - name: ssn_token
+        description: "Skyflow token; pattern enforced. Plain SSN here is a P0 incident."
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "ssn_token IS NULL OR ssn_token LIKE 'tok\\\\_%'"
+      - name: zip
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "zip IS NULL OR REGEXP_LIKE(zip, '^[0-9]{5}$')"
+      - name: state
+        tests:
+          - accepted_values:
+              values: ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC','PR','VI','GU','AS','MP']
+              config:
+                where: "state IS NOT NULL"
+      - name: quality_score
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "quality_score >= 0 AND quality_score <= 1"

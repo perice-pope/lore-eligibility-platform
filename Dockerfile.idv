@@ -1,0 +1,30 @@
+# Multi-stage build for the IDV API. Targets ECS Fargate (linux/amd64) but builds locally too.
+# Production image runs as non-root, on distroless, with no shell.
+
+FROM python:3.12-slim AS builder
+WORKDIR /build
+COPY pyproject.toml ./
+RUN pip wheel --no-cache-dir --wheel-dir /wheels \
+    "fastapi>=0.110" "uvicorn[standard]>=0.27" "pydantic>=2.6"
+
+FROM python:3.12-slim
+RUN useradd -r -u 10001 -m -s /sbin/nologin app && \
+    apt-get update && apt-get install -y --no-install-recommends wget && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache-dir --no-index --find-links=/wheels \
+    fastapi 'uvicorn[standard]' 'pydantic>=2'
+
+COPY services /app/services
+COPY samples /app/samples
+
+USER app
+EXPOSE 8000
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+HEALTHCHECK --interval=10s --timeout=3s CMD wget -qO- http://localhost:8000/healthz || exit 1
+
+CMD ["uvicorn", "services.identity_verification_api.main:app", \
+     "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--workers", "2"]

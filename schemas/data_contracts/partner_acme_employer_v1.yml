@@ -1,0 +1,109 @@
+# =====================================================================
+# Data Contract — Acme Corp (employer partner, CSV nightly)
+# Version: 1
+# Reviewed by: data-platform-lead@lore.co
+# Reviewed at: 2026-04-15T10:30:00Z
+# AI-generated draft + human edit. The schema-inference output was reviewed
+# manually before this was promoted; lineage is in the audit log.
+# =====================================================================
+
+partner_id: acme-corp
+partner_display_name: "Acme Corp"
+contract_version: 1
+source_format: csv
+source_delivery: sftp                         # SFTP via AWS Transfer Family
+expected_cadence: daily
+expected_land_time_utc: "06:00"
+expected_record_count_min: 9000
+expected_record_count_max: 12000              # ~10K employees ± 20%
+partition_column: effective_start_date
+overall_quality_risk: LOW
+
+encryption:
+  s3_kms_key_alias: alias/lore/eligibility/acme-corp
+  vault_partner_scope: skyflow-vault-acme
+
+columns:
+  - source_column: "EmployeeID"
+    canonical_field: partner_member_id
+    confidence: 1.00
+    pii_tier: TIER_4_NONE
+    cleansing_rules: [strip_whitespace]
+    reasoning: "Canonical Acme HR identifier. Not PII on its own."
+
+  - source_column: "FirstName"
+    canonical_field: first_name
+    confidence: 0.98
+    pii_tier: TIER_1_DIRECT
+    cleansing_rules: [strip_whitespace, title_case_with_diacritics]
+
+  - source_column: "LastName"
+    canonical_field: last_name
+    confidence: 0.98
+    pii_tier: TIER_1_DIRECT
+    cleansing_rules: [strip_whitespace, title_case_with_diacritics]
+
+  - source_column: "DOB"
+    canonical_field: dob
+    confidence: 0.95
+    pii_tier: TIER_1_DIRECT
+    cleansing_rules: [coerce_iso8601_date_from_MM/DD/YYYY]
+
+  - source_column: "SSN"
+    canonical_field: ssn
+    confidence: 1.00
+    pii_tier: TIER_1_DIRECT
+    cleansing_rules: [validate_ssn_format, tokenize_via_skyflow, store_last_4_only]
+
+  - source_column: "Email"
+    canonical_field: email
+    confidence: 0.98
+    pii_tier: TIER_1_DIRECT
+    cleansing_rules: [lowercase, rfc5322_validate, tokenize_via_skyflow]
+
+  - source_column: "PostalCode"
+    canonical_field: zip
+    confidence: 0.97
+    pii_tier: TIER_2_QUASI
+    cleansing_rules: [pad_to_5_digits]
+
+  - source_column: "State"
+    canonical_field: state
+    confidence: 0.98
+    pii_tier: TIER_2_QUASI
+    cleansing_rules: [uppercase, validate_us_state_abbrev]
+
+  - source_column: "EligStartDate"
+    canonical_field: effective_start_date
+    confidence: 0.96
+    pii_tier: TIER_3_SENSITIVE
+    cleansing_rules: [coerce_iso8601_date]
+
+  - source_column: "EligEndDate"
+    canonical_field: effective_end_date
+    confidence: 0.96
+    pii_tier: TIER_3_SENSITIVE
+    cleansing_rules: [coerce_iso8601_date, allow_null]
+
+  - source_column: "PlanCode"
+    canonical_field: plan_code
+    confidence: 1.00
+    pii_tier: TIER_3_SENSITIVE
+    cleansing_rules: [uppercase]
+
+quality_thresholds:
+  completeness_required_fields:
+    - last_name
+    - first_name
+    - dob
+    - effective_start_date
+    - partner_member_id
+  max_quarantine_pct: 1.0
+  max_freshness_hours: 30                     # alert if no file in 30h
+  max_row_count_change_pct: 15                # alert on >15% change vs prior load
+
+retention:
+  bronze_years: 7
+  silver_years: 7
+  gold_years: 7
+  delete_on_offboard_after_days: 90

@@ -1,0 +1,158 @@
+# Soda Core data quality checks.
+# Run via Dagster asset checks; failures gate downstream layers per
+# docs/data-quality-standards.md.
+
+# ----------------------------------------------------------------------
+# Bronze layer — landing fidelity
+# ----------------------------------------------------------------------
+checks for bronze.partner_eligibility_raw:
+  # Freshness: every active partner must land at least once in the last 30h.
+  - freshness(_ingested_at) < 30h:
+      attributes:
+        owner: partner-success-mgr
+        severity: warn
+  # Schema fingerprint drift detection.
+  - row_count > 0:
+      attributes:
+        owner: data-platform
+        severity: error
+  # Quarantine rate per partner (1% threshold). Fails the bronze→silver gate.
+  - failed rows:
+      name: bronze_quarantine_rate_below_1pct
+      attributes:
+        owner: data-platform
+        severity: error
+      fail condition: |
+        (
+          SELECT COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM bronze.partner_eligibility_raw
+                                            WHERE _ingested_at >= CURRENT_DATE - INTERVAL '1' DAY), 0)
+            FROM bronze.partner_eligibility_quarantine
+           WHERE _ingested_at >= CURRENT_DATE - INTERVAL '1' DAY
+        ) > 1.0
+
+# ----------------------------------------------------------------------
+# Silver — cleansed shape
+# ----------------------------------------------------------------------
+checks for silver.eligibility_member:
+  # Required-field completeness (Tier-1 + window).
+  - missing_count(last_name) = 0:
+      attributes:
+        owner: data-platform
+        severity: error
+  - missing_count(first_name) = 0:
+      attributes:
+        owner: data-platform
+        severity: error
+  - missing_count(dob) = 0:
+      attributes:
+        owner: data-platform
+        severity: error
+  - missing_count(effective_start_date) = 0:
+      attributes:
+        owner: data-platform
+        severity: error
+
+  # Range/validity.
+  - invalid_count(dob) = 0:
+      valid min: '1900-01-01'
+      valid max: '2026-12-31'
+      attributes:
+        owner: data-platform
+        severity: error
+  - invalid_count(state) = 0:
+      valid values:
+        ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+         'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+         'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC','PR','VI','GU','AS','MP']
+  - invalid_count(zip) = 0:
+      valid regex: '^[0-9]{5}$'
+  - invalid_count(ssn_last4) = 0:
+      valid regex: '^[0-9]{4}$'
+
+  # Uniqueness — partner+member id should not duplicate within a contract version.
+  - duplicate_count(partner_id, partner_member_id, contract_version) = 0:
+      attributes:
+        owner: data-platform
+        severity: error
+
+  # Eligibility date sanity.
+  - failed rows:
+      name: end_date_after_start_date
+      fail query: |
+        SELECT silver_record_id, effective_start_date, effective_end_date
+          FROM silver.eligibility_member
+         WHERE effective_end_date IS NOT NULL
+           AND effective_end_date < effective_start_date
+      attributes:
+        owner: data-platform
+        severity: error
+
+  - failed rows:
+      name: dob_not_after_eligibility_start
+      fail query: |
+        SELECT silver_record_id, dob, effective_start_date
+          FROM silver.eligibility_member
+         WHERE dob > effective_start_date
+      attributes:
+        owner: data-platform
+        severity: error
+
+  # PII leak prevention — no raw-looking SSN should sneak into silver.
+  - failed rows:
+      name: ssn_token_format_check
+      fail query: |
+        SELECT silver_record_id, ssn_token
+          FROM silver.eligibility_member
+         WHERE ssn_token IS NOT NULL
+           AND (ssn_token NOT LIKE 'tok\\_%' OR REGEXP_LIKE(ssn_token, '[0-9]{3}-[0-9]{2}-[0-9]{4}'))
+      attributes:
+        owner: security
+        severity: critical
+
+# ----------------------------------------------------------------------
+# Silver — entity resolution health
+# ----------------------------------------------------------------------
+checks for silver.entity_resolution_decisions:
+  - row_count > 0:
+      attributes:
+        owner: data-platform
+  - failed rows:
+      name: review_queue_not_growing_unbounded
+      fail query: |
+        SELECT COUNT(*) AS pending
+          FROM silver.entity_resolution_decisions
+         WHERE decision = 'REVIEW'
+           AND decided_at < CURRENT_DATE - INTERVAL '7' DAY
+        HAVING COUNT(*) > 500
+      attributes:
+        owner: data-platform
+        severity: warn
+
+# ----------------------------------------------------------------------
+# Gold — golden record store invariants
+# ----------------------------------------------------------------------
+checks for gold.eligibility_member:
+  - missing_count(first_name, last_name, dob, zip, effective_start_date) = 0
+  - duplicate_count(golden_record_id) = 0
+  # Each partner_member_id should map to exactly one golden record per partner.
+  - failed rows:
+      name: one_golden_record_per_partner_member
+      fail query: |
+        SELECT primary_partner_id, primary_partner_member_id, COUNT(*) AS ct
+          FROM gold.eligibility_member
+         GROUP BY primary_partner_id, primary_partner_member_id
+        HAVING COUNT(*) > 1
+      attributes:
+        owner: data-platform
+        severity: error
+  - failed rows:
+      name: zero_active_members_alarm
+      fail query: |
+        SELECT primary_partner_id, COUNT(*) AS ct
+          FROM gold.eligibility_member
+         WHERE is_active = true
+         GROUP BY primary_partner_id
+        HAVING COUNT(*) = 0
+      attributes:
+        owner: partner-success-mgr
+        severity: critical

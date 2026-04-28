@@ -1,0 +1,52 @@
+{
+  "feed_version": "2.1",
+  "source": "blue-shield-east",
+  "generated_at": "2026-04-28T03:15:00Z",
+  "members": [
+    {
+      "subscriberId": "BS-9001",
+      "givenName": "Robert",
+      "familyName": "Smith",
+      "dateOfBirth": "1962-04-12",
+      "ssn": "123-45-6789",
+      "contactEmail": "bob.smith@example.com",
+      "addressLine1": "401 N Maple Dr",
+      "addressCity": "Beverly Hills",
+      "addressState": "CA",
+      "postalCode": "90210",
+      "coverageStart": "2024-01-01",
+      "coverageEnd": null,
+      "productCode": "BS-PPO-GOLD"
+    },
+    {
+      "subscriberId": "BS-9002",
+      "givenName": "Lin",
+      "familyName": "Chen",
+      "dateOfBirth": "1990-01-15",
+      "ssn": "234-55-1122",
+      "contactEmail": "lin.chen@example.com",
+      "addressLine1": "350 W 31st St",
+      "addressCity": "New York",
+      "addressState": "NY",
+      "postalCode": "10001",
+      "coverageStart": "2023-08-01",
+      "coverageEnd": null,
+      "productCode": "BS-HMO-SILVER"
+    },
+    {
+      "subscriberId": "BS-9003",
+      "givenName": "Dolores",
+      "familyName": "Abernathy",
+      "dateOfBirth": "1970-07-04",
+      "ssn": "899-44-2255",
+      "contactEmail": "dolores.a@example.com",
+      "addressLine1": "1 Sweetwater Way",
+      "addressCity": "Phoenix",
+      "addressState": "AZ",
+      "postalCode": "85001",
+      "coverageStart": "2025-06-01",
+      "coverageEnd": null,
+      "productCode": "BS-PPO-GOLD"
+    }
+  ]
+}

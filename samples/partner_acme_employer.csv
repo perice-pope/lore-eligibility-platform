@@ -1,0 +1,11 @@
+EmployeeID,FirstName,LastName,DOB,SSN,Email,Address1,City,State,PostalCode,EligStartDate,EligEndDate,PlanCode
+A-100001,Robert,Smith,04/12/1962,123-45-6789,bob.smith@acme.example,401 N Maple Dr,Beverly Hills,CA,90210,2024-01-01,,GOLD-PPO
+A-100002,Maria,Garcia-Lopez,09/30/1985,987-65-4321,maria.garcia@acme.example,910 Congress Ave,Austin,TX,78701,2024-01-01,,GOLD-PPO
+A-100003,Jin,Park,03/22/1978,555-12-3456,jin.park@acme.example,1100 Stewart Ave,Garden City,NY,11530,2024-03-15,,SILVER-HMO
+A-100004,Aaliyah,Johnson,11/05/1991,200-44-1122,aaliyah.j@acme.example,440 Lake Forest Dr,Atlanta,GA,30303,2024-01-01,,GOLD-PPO
+A-100005,Ethan,O'Brien,07/18/1955,400-12-3344,ethan.obrien@acme.example,55 King St,Charleston,SC,29401,2023-06-01,2024-06-30,SILVER-HMO
+A-100006,Priya,Patel,12/01/1989,300-22-5566,priya.patel@acme.example,200 Lavaca St,Austin,TX,78701,2024-02-01,,GOLD-PPO
+A-100007,Marcus,Williams,06/14/1980,250-77-8899,marcus.w@acme.example,1 Sweetwater Way,Phoenix,AZ,85001,2023-11-01,,GOLD-PPO
+A-100008,Yuki,Tanaka,02/28/1994,777-88-9911,yuki.tanaka@acme.example,123 Powell St,San Francisco,CA,94102,2024-04-01,,GOLD-PPO
+A-100009,Sofia,Hernández,08/19/1972,150-33-4477,sofia.h@acme.example,555 Brickell Ave,Miami,FL,33131,2024-01-01,,GOLD-PPO
+A-100010,Daniel,Schmidt,10/03/1968,180-66-1199,daniel.s@acme.example,300 Park Ave,New York,NY,10010,2024-01-01,,GOLD-PPO
