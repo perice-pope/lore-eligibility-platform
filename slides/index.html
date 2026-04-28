@@ -28,8 +28,15 @@
       --lore-blue: #6aa9ff;
     }
 
+    /* Apply Inter to ALL text in the deck (everything except code blocks). */
+    .reveal,
+    .reveal .slides,
+    .reveal section,
+    .reveal section *:not(pre):not(code):not(.svc-emoji):not(.pic):not(.ic) {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif !important;
+    }
+
     .reveal {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
       font-feature-settings: "ss01", "cv01", "cv11";
       font-weight: 400;
       letter-spacing: -0.005em;
@@ -38,7 +45,9 @@
     .reveal .slides { text-align: left; }
     .reveal .slides section h1,
     .reveal .slides section h2,
-    .reveal .slides section h3 {
+    .reveal .slides section h3,
+    .reveal .slides section h4,
+    .reveal .slides section h5 {
       text-transform: none;
       color: var(--lore-green);
       font-weight: 700;
@@ -424,6 +433,194 @@
     .gate-step.success { border-color: var(--lore-green); color: var(--lore-green); }
     .gate-arrow { color: var(--lore-green); font-size: 1.2em; font-weight: 700; }
 
+    /* ─── 5-card horizontal grid (problems / substitutions) ─── */
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.6em;
+      margin-top: 0.7em;
+    }
+    .icon-card {
+      background: rgba(25, 195, 158, 0.05);
+      border: 1px solid var(--lore-mid);
+      border-radius: 10px;
+      padding: 0.9em 0.7em;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3em;
+    }
+    .icon-card .ic {
+      font-size: 1.6em;
+      line-height: 1;
+      margin-bottom: 0.15em;
+    }
+    .icon-card h4 {
+      color: var(--lore-green);
+      font-size: 0.85em;
+      margin: 0 0 0.2em;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .icon-card p {
+      color: var(--lore-soft);
+      font-size: 0.78em;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    /* ─── Principle cards (slide 6) ─── */
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6em;
+      margin-top: 0.6em;
+    }
+    .principle {
+      background: rgba(25, 195, 158, 0.05);
+      border: 1px solid var(--lore-mid);
+      border-radius: 10px;
+      padding: 0.8em 0.9em;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6em;
+    }
+    .principle .pic {
+      font-size: 1.4em;
+      line-height: 1.1;
+      flex-shrink: 0;
+    }
+    .principle h4 {
+      color: #fff;
+      font-size: 0.92em;
+      margin: 0 0 0.15em;
+      font-weight: 600;
+    }
+    .principle p {
+      color: var(--lore-soft);
+      font-size: 0.78em;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .principle-special {
+      grid-column: 1 / -1;
+      background: rgba(25, 195, 158, 0.10);
+      border: 1px solid var(--lore-green);
+      border-radius: 10px;
+      padding: 0.7em 1em;
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+      margin-top: 0.4em;
+    }
+    .principle-special .pic { font-size: 1.5em; }
+    .principle-special h4 { color: var(--lore-green); font-size: 0.95em; margin: 0 0 0.15em; font-weight: 700; }
+    .principle-special p { color: #fff; font-size: 0.85em; margin: 0; }
+
+    /* ─── 3-card with hero benefit (slide 14) ─── */
+    .subst-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.9em;
+      margin-top: 0.8em;
+    }
+    .subst-card {
+      background: rgba(25, 195, 158, 0.05);
+      border: 1px solid var(--lore-mid);
+      border-radius: 12px;
+      padding: 1em 1em 0.9em;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+    }
+    .subst-card .pic { font-size: 1.8em; }
+    .subst-card .name { color: #fff; font-size: 1.1em; font-weight: 600; }
+    .subst-card .vs { color: var(--lore-soft); font-size: 0.78em; opacity: 0.85; }
+    .subst-card .hero {
+      color: var(--lore-green);
+      font-size: 0.95em;
+      font-weight: 600;
+      margin-top: 0.3em;
+    }
+    .subst-card p {
+      color: var(--lore-soft);
+      font-size: 0.82em;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    /* ─── 5-step horizontal pipeline (slide 16) ─── */
+    .pipeline {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 0.4em;
+      margin-top: 0.8em;
+    }
+    .pipe-step {
+      background: rgba(25, 195, 158, 0.05);
+      border: 1px solid var(--lore-mid);
+      border-radius: 10px;
+      padding: 0.8em 0.6em;
+      text-align: center;
+    }
+    .pipe-step.ai {
+      background: rgba(25, 195, 158, 0.10);
+      border-color: var(--lore-green);
+    }
+    .pipe-step.human {
+      background: rgba(241, 176, 76, 0.08);
+      border-color: var(--lore-warn);
+    }
+    .pipe-step .pic { font-size: 1.4em; line-height: 1; }
+    .pipe-step h5 {
+      color: #fff;
+      font-size: 0.88em;
+      margin: 0.3em 0 0.15em;
+      font-weight: 600;
+    }
+    .pipe-step p {
+      color: var(--lore-soft);
+      font-size: 0.74em;
+      margin: 0;
+      line-height: 1.35;
+    }
+    .pipe-arrow {
+      color: var(--lore-green);
+      font-size: 1.4em;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    /* ─── Hero stat (used on slide 16) ─── */
+    .hero-stat {
+      text-align: center;
+      padding: 0.6em 0;
+    }
+    .hero-stat .big {
+      font-size: 2.4em;
+      color: var(--lore-green);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .hero-stat .lbl {
+      color: var(--lore-soft);
+      font-size: 0.95em;
+      margin-top: 0.2em;
+    }
+
+    /* ─── Slide-content overflow safety ─── */
+    .reveal section {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      max-height: 100%;
+      overflow: hidden;
+    }
+    .reveal section.title-slide {
+      justify-content: center;
+    }
+
     .pill {
       display: inline-block;
       padding: 0.15em 0.55em;
@@ -528,41 +725,114 @@
     <!-- ========================= 4. WHY CASE 3 ========================= -->
     <section>
       <h2>Why I picked Case Study #3</h2>
-      <ul>
-        <li><strong>It's the source-of-truth problem.</strong> New account creation depends on this. Can't match → member can't sign up. Wrong-match → data breach.</li>
-        <li><strong>It's data quality <em>and</em> PII governance.</strong> Most data engineering ducks one or the other. This case demands both.</li>
-        <li><strong>It's where AI buys you something real.</strong> Schema inference and entity resolution are two of the highest-ROI applications of LLMs in data engineering today — in a HIPAA-credible way.</li>
-      </ul>
+      <div class="pillar-grid">
+        <div class="pillar">
+          <h4>Source of truth</h4>
+          <p>New account creation depends on this. Can't match a sign-up → member can't use Lore. Wrong match → data breach.</p>
+        </div>
+        <div class="pillar">
+          <h4>Quality + governance</h4>
+          <p>Most data work ducks one or the other. This case demands both done well at the same time.</p>
+        </div>
+        <div class="pillar">
+          <h4>Where AI earns its keep</h4>
+          <p>Schema inference and entity resolution are two of the highest-ROI uses of LLMs in data engineering today.</p>
+        </div>
+      </div>
       <div class="footer-slide-num">04 / 27</div>
     </section>
 
     <!-- ========================= 5. THE 5 PROBLEMS ========================= -->
     <section>
-      <h2>The five problems I'm actually solving</h2>
-      <ol>
-        <li><strong>Heterogeneous formats.</strong> CSV, JSON, X12 EDI 834, sometimes a database CDC stream. Field names differ. Date formats differ.</li>
-        <li><strong>Dirty data.</strong> Typo'd names, three date formats, ZIPs missing leading zeros, SSNs with hyphens / spaces / placeholders.</li>
-        <li><strong>Same person across partners.</strong> "Robert Smith" here, "Bob Smith" there. We must resolve to one golden record without merging two distinct people. Wrong-merge = breach.</li>
-        <li><strong>Bulk + CDC.</strong> Historical bulk load <em>and</em> continuous incremental updates must converge to the same end state.</li>
-        <li><strong>Hot-path SLO.</strong> Identity verification at p99 &lt; 150ms, 99.95% available — while the offline pipeline does all of the above.</li>
-      </ol>
-      <p style="margin-top: 0.8em;">Everything else falls out of solving these five.</p>
+      <h2>The five problems I'm solving</h2>
+      <div class="grid-5">
+        <div class="icon-card">
+          <div class="ic">📁</div>
+          <h4>Mixed formats</h4>
+          <p>CSV, JSON, EDI 834, database streams. Different fields, different shapes.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">🧹</div>
+          <h4>Dirty data</h4>
+          <p>Typos, three date formats, missing leading zeros, placeholder SSNs.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">👥</div>
+          <h4>Same person, two partners</h4>
+          <p>"Bob Smith" here, "Robert Smith" there. Wrong merge = breach.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">🔄</div>
+          <h4>Bulk + live</h4>
+          <p>Historical loads <em>and</em> live updates have to land in the same place.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">⚡</div>
+          <h4>Sub-second sign-ups</h4>
+          <p>Verify identity in &lt; 150&nbsp;ms while the rest of the pipeline runs.</p>
+        </div>
+      </div>
+      <p style="margin-top: 0.9em; text-align: center; color: var(--lore-soft);">
+        Everything else falls out of solving these five.
+      </p>
       <div class="footer-slide-num">05 / 27</div>
     </section>
 
     <!-- ========================= 6. PRINCIPLES ========================= -->
     <section>
-      <h2>Architecture principles, in priority order</h2>
-      <ol>
-        <li><strong>Privacy is non-negotiable.</strong> PII never leaves the secure plane in plaintext.</li>
-        <li><strong>Eligibility is the source of truth for identity.</strong> Wrong match = breach; missed match = lost member. Both P0.</li>
-        <li><strong>Data contracts are the API.</strong> Absorb partner chaos at the edge.</li>
-        <li><strong>Open formats over proprietary.</strong> Iceberg, Parquet, Avro. Walk-away clause inside 90 days.</li>
-        <li><strong>Idempotent, replayable, observable.</strong> Every step replayable. Every step emits a metric.</li>
-        <li><strong>Bias toward managed services.</strong> We're not big enough to run our own Kafka well at 3am.</li>
-        <li><strong>AI is augmentation, not autopilot.</strong> Human approves new contracts; reviews uncertain matches.</li>
-      </ol>
-      <blockquote>When two principles conflict, the higher one wins.</blockquote>
+      <h2>The principles I designed against</h2>
+      <p>When two of these conflict, the one listed first wins.</p>
+      <div class="principles">
+        <div class="principle">
+          <div class="pic">🔒</div>
+          <div>
+            <h4>Privacy first, always</h4>
+            <p>PII never leaves the vault in plaintext.</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="pic">🎯</div>
+          <div>
+            <h4>Eligibility = source of truth</h4>
+            <p>Wrong match is a breach. Missed match loses a member.</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="pic">📜</div>
+          <div>
+            <h4>Contracts are the API</h4>
+            <p>Absorb partner chaos at the edge; downstream stays stable.</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="pic">🔓</div>
+          <div>
+            <h4>Open formats</h4>
+            <p>Iceberg, Parquet, Avro. We can walk away from any vendor in 90 days.</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="pic">♻️</div>
+          <div>
+            <h4>Replayable &amp; observable</h4>
+            <p>Every step can be re-run. Every step emits a metric.</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="pic">☁️</div>
+          <div>
+            <h4>Buy managed, build the pipeline</h4>
+            <p>We're not big enough to operate our own Kafka well at 3am.</p>
+          </div>
+        </div>
+        <div class="principle-special">
+          <div class="pic">🤖</div>
+          <div>
+            <h4>AI is augmentation — never autopilot</h4>
+            <p>A human approves every new partner contract and reviews every uncertain match.</p>
+          </div>
+        </div>
+      </div>
       <div class="footer-slide-num">06 / 27</div>
     </section>
 
@@ -745,18 +1015,17 @@
 
     <!-- ========================= 10. FAILURE MODES ========================= -->
     <section>
-      <h2>What could go wrong (and what we do about it)</h2>
+      <h2>What could go wrong — and how we handle it</h2>
       <table>
-        <thead><tr><th>Failure</th><th>Mitigation</th><th>Sev</th></tr></thead>
+        <thead><tr><th>If this happens…</th><th>…here's what we do</th></tr></thead>
         <tbody>
-          <tr><td>Partner sends wrong file (last quarter's snapshot)</td><td>Soda freshness + row-count anomaly checks; quarantine; partner alerted</td><td><span class="pill pill-amber">P1</span></td></tr>
-          <tr><td>LLM schema-inference returns wrong PII tier</td><td>Always human-reviewed; Macie scans bronze for unflagged PII</td><td><span class="pill pill-red">P0</span></td></tr>
-          <tr><td>Entity resolution merges two distinct people</td><td>Conservative threshold (0.95 auto, 0.80 review); audit every merge; reversible</td><td><span class="pill pill-red">P0</span></td></tr>
-          <tr><td>Skyflow outage during bulk load</td><td>Tokenization queues to durable SQS; bulk lags but doesn't fail</td><td><span class="pill pill-amber">P1</span></td></tr>
-          <tr><td>Bedrock rate-limit during spike</td><td>Provisioned throughput; degrade to deterministic-only matching</td><td><span class="pill pill-blue">P2</span></td></tr>
-          <tr><td>KMS key compromise (single partner)</td><td>Per-partner CMK; rotate; CloudTrail every key use</td><td><span class="pill pill-red">P0</span></td></tr>
-          <tr><td>Insider threat — engineer queries raw PII</td><td>Skyflow access policies + two-person rule; quarterly access review</td><td><span class="pill pill-red">P0</span></td></tr>
-          <tr><td>Snowflake cost overrun</td><td>Resource monitors with hard credit caps; query tagging; weekly review</td><td><span class="pill pill-blue">P2</span></td></tr>
+          <tr><td>Partner sends the wrong file (last quarter's snapshot)</td><td>Automated freshness + row-count checks → quarantine the file → alert the partner.</td></tr>
+          <tr><td>The AI mis-classifies a PII column</td><td>Every AI suggestion is reviewed by a human first. AWS Macie also scans the raw landing zone for any PII the contract didn't declare.</td></tr>
+          <tr><td>Entity resolution merges two different people</td><td>Auto-merge only above 95% confidence. Below that, a human reviews. Every merge is audited and reversible.</td></tr>
+          <tr><td>The PII vault has an outage during a bulk load</td><td>Tokenization requests queue to a durable buffer. Bulk lags but doesn't fail.</td></tr>
+          <tr><td>Bedrock throttles us during a spike</td><td>Reserved throughput keeps the hot path; the AI fallback handles the rest.</td></tr>
+          <tr><td>An engineer queries raw PII without a reason</td><td>Vault requires a logged purpose + second-engineer approval. Every access lands in an audit feed.</td></tr>
+          <tr><td>Snowflake cost overruns</td><td>Hard credit caps on every warehouse. Per-team query tagging. Weekly cost review.</td></tr>
         </tbody>
       </table>
       <div class="footer-slide-num">10 / 27</div>
@@ -787,81 +1056,78 @@
 
     <!-- ========================= 12. SNOWFLAKE OVER REDSHIFT ========================= -->
     <section>
-      <h2>Snowflake over Redshift</h2>
-      <ul>
-        <li><strong>Compute / storage separation.</strong> Size warehouse for dbt build, scale separately for BI; per-second billing; zero-copy cloning for dev/staging.</li>
-        <li><strong>Dynamic data masking + row access policies are first-class.</strong> Three lines of SQL gives us per-role masking; Redshift wants more glue.</li>
-        <li><strong>Data sharing.</strong> Share a masked view back to a partner without copying data.</li>
-        <li><strong>Snowpark.</strong> Data-science team iterates on entity-resolution features in-warehouse.</li>
-      </ul>
-      <pre><code class="language-sql">CREATE MASKING POLICY mask_dob_to_year AS (val DATE) RETURNS DATE ->
-  CASE WHEN CURRENT_ROLE() IN ('IDV_SERVICE_ROLE','COMPLIANCE_ROLE')
-       THEN val
-       ELSE DATE_FROM_PARTS(YEAR(val), 1, 1)
-  END;
-
-ALTER TABLE gold.eligibility_member MODIFY COLUMN dob SET MASKING POLICY mask_dob_to_year;</code></pre>
+      <h2>Why Snowflake (instead of Redshift)</h2>
+      <div class="three-col">
+        <div class="col" style="background: rgba(25,195,158,0.05); border: 1px solid var(--lore-mid); border-radius: 10px; padding: 1em;">
+          <div style="font-size: 1.7em; margin-bottom: 0.3em;">💸</div>
+          <h3>Pay only when used</h3>
+          <p style="margin: 0; color: var(--lore-soft);">Spin up a warehouse for the nightly build, kill it after. We're not paying for idle compute.</p>
+        </div>
+        <div class="col" style="background: rgba(25,195,158,0.05); border: 1px solid var(--lore-mid); border-radius: 10px; padding: 1em;">
+          <div style="font-size: 1.7em; margin-bottom: 0.3em;">🔒</div>
+          <h3>Built-in PII protection</h3>
+          <p style="margin: 0; color: var(--lore-soft);">Per-role data masking is native — analysts see year-of-birth only, the sign-up service sees the full date. No app changes needed.</p>
+        </div>
+        <div class="col" style="background: rgba(25,195,158,0.05); border: 1px solid var(--lore-mid); border-radius: 10px; padding: 1em;">
+          <div style="font-size: 1.7em; margin-bottom: 0.3em;">🔗</div>
+          <h3>Share without copying</h3>
+          <p style="margin: 0; color: var(--lore-soft);">Partners can read a curated view of their own data inside their own warehouse. No S3 dumps, no nightly sync to maintain.</p>
+        </div>
+      </div>
       <div class="footer-slide-num">12 / 27</div>
     </section>
 
     <!-- ========================= 13. SKYFLOW OVER KMS-ONLY ========================= -->
     <section>
-      <h2>Skyflow over self-built KMS-only</h2>
+      <h2>Why a PII vault (instead of just AWS encryption)</h2>
       <div class="two-col">
         <div class="col">
-          <h3>What KMS + Macie give you</h3>
+          <h3>What AWS alone gives you</h3>
           <ul>
-            <li>Encryption at rest</li>
-            <li>PII discovery scans</li>
-            <li>Lake Formation column ACLs</li>
+            <li>Encryption when data is at rest</li>
+            <li>Automated scans that find unexpected PII</li>
+            <li>Column-level access controls</li>
           </ul>
-          <p style="margin-top: 0.6em;"><em>Necessary, not sufficient.</em></p>
+          <p style="margin-top: 0.6em; color: var(--lore-soft);"><em>Necessary — but not enough on its own.</em></p>
         </div>
         <div class="col">
           <h3>What Skyflow adds</h3>
           <ul>
-            <li><strong>Format-preserving tokenization</strong> — apps use a token in place of an SSN with the same shape, including in foreign keys</li>
-            <li><strong>Polymorphic encryption</strong> — search and partial reveal on encrypted data</li>
-            <li><strong>Policy-as-code</strong> — who detokenizes what, when, why; built-in audit</li>
-            <li><strong>SOC 2 + HIPAA + PCI</strong> baked in; one BAA</li>
+            <li><strong>Lookalike tokens.</strong> Apps use a stand-in that has the same shape as the SSN — they never hold the real value.</li>
+            <li><strong>Match without revealing.</strong> Find the right record without ever decrypting the PII.</li>
+            <li><strong>Built-in approval flow.</strong> Anyone who wants to see the real value has to log a reason and get a second signoff.</li>
+            <li><strong>Compliance certs included.</strong> SOC 2 + HIPAA + PCI in one signed agreement.</li>
           </ul>
         </div>
       </div>
-      <blockquote style="margin-top: 0.6em;">Buy the vault. Build the pipeline. Don't get those backwards.</blockquote>
+      <blockquote style="margin-top: 0.7em;">Buy the vault. Build the pipeline. <strong>Don't get those backwards.</strong></blockquote>
       <div class="footer-slide-num">13 / 27</div>
     </section>
 
     <!-- ========================= 14. THREE OTHER SUBSTITUTIONS ========================= -->
     <section>
-      <h2>Three more substitutions</h2>
-      <div class="three-col">
-        <div class="col">
-          <h3>Dagster<br/>over Step Fns / MWAA</h3>
-          <ul>
-            <li>Asset-aware</li>
-            <li>Native data contracts</li>
-            <li>Lineage out of the box</li>
-            <li>Type-checked Python</li>
-            <li>Hybrid agent in our VPC (HIPAA)</li>
-          </ul>
+      <h2>Three more deliberate choices</h2>
+      <div class="subst-grid">
+        <div class="subst-card">
+          <div class="pic">🎯</div>
+          <div class="name">Dagster</div>
+          <div class="vs">over AWS Step Functions / MWAA</div>
+          <p class="hero">Tracks data, not jobs.</p>
+          <p>Knows what data exists and when each piece needs refreshing — instead of just running scripts on a schedule.</p>
         </div>
-        <div class="col">
-          <h3>Iceberg<br/>over Delta</h3>
-          <ul>
-            <li>Engine pluralism (Spark, Trino, Snowflake, Athena, DuckDB)</li>
-            <li>No Databricks lock-in</li>
-            <li>Cleaner metadata model at billions of files</li>
-            <li>Time travel + branching</li>
-          </ul>
+        <div class="subst-card">
+          <div class="pic">🧊</div>
+          <div class="name">Apache Iceberg</div>
+          <div class="vs">over Delta Lake</div>
+          <p class="hero">No vendor lock-in.</p>
+          <p>Same data lake, readable by any engine — Snowflake, Spark, Trino, even DuckDB on a laptop. We can swap tools without re-copying data.</p>
         </div>
-        <div class="col">
-          <h3>Datadog<br/>over CloudWatch alone</h3>
-          <ul>
-            <li>Unified metrics, logs, traces</li>
-            <li>SaaS + AWS + Snowflake + Skyflow in one pane</li>
-            <li>SLO burn-rate alerts native</li>
-            <li>Better correlation</li>
-          </ul>
+        <div class="subst-card">
+          <div class="pic">📡</div>
+          <div class="name">Datadog</div>
+          <div class="vs">over CloudWatch alone</div>
+          <p class="hero">One pane, every system.</p>
+          <p>AWS, Snowflake, Skyflow, Dagster — all in the same dashboard. When something breaks at 3am, on-call sees the full picture.</p>
         </div>
       </div>
       <div class="footer-slide-num">14 / 27</div>
@@ -882,21 +1148,48 @@ ALTER TABLE gold.eligibility_member MODIFY COLUMN dob SET MASKING POLICY mask_do
 
     <!-- ========================= 16. AI #1 SCHEMA INFERENCE ========================= -->
     <section>
-      <h2>AI feature #1 — Schema inference</h2>
-      <p>A new partner sends a file we've never seen. Without AI:</p>
-      <p style="color: var(--lore-warn);">📅 3–5 engineer days · hand-coded parser · engineer-dependent PII coverage</p>
-      <p>With Bedrock + Claude Sonnet:</p>
-      <ol>
-        <li>Take a stratified sample (first 50 + random 50 + last 50 rows).</li>
-        <li>Send to Claude with a structured prompt — outputs JSON: column → canonical-field mapping, PII tier, cleansing rules, confidence.</li>
-        <li>Render as draft data-contract YAML.</li>
-        <li>Engineer reviews, edits, signs off, commits to git.</li>
-        <li>Pipeline picks up the contract automatically.</li>
-      </ol>
-      <p style="font-size: 1.1em; color: var(--lore-green); margin-top: 0.8em;">
-        <strong>Time-to-onboard: 5 days → &lt;1 hour of human review.</strong>
+      <h2>AI feature #1 — Onboarding a new partner</h2>
+
+      <div class="hero-stat">
+        <div class="big">5 days &nbsp;→&nbsp; under an hour</div>
+        <div class="lbl">Engineer time to onboard a new partner</div>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pic">📄</div>
+          <h5>Sample rows</h5>
+          <p>50 lines from the new file</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step ai">
+          <div class="pic">🤖</div>
+          <h5>Claude reads it</h5>
+          <p>Maps every column · tags PII</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pic">📝</div>
+          <h5>Draft contract</h5>
+          <p>Auto-generated YAML</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step human">
+          <div class="pic">👤</div>
+          <h5>Engineer reviews</h5>
+          <p>Edit · approve · commit</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pic">🚀</div>
+          <h5>Live in pipeline</h5>
+          <p>Real partner data flows</p>
+        </div>
+      </div>
+
+      <p style="margin-top: 0.9em; text-align: center; color: var(--lore-soft);">
+        The AI <em>proposes</em>. A human <em>approves</em> before a single record flows through.
       </p>
-      <p style="font-size: 0.9em;"><em>Safe by design:</em> LLM never writes to production. Output is a proposal a human approves. Inference accuracy measured monthly on a labeled holdout.</p>
       <div class="footer-slide-num">16 / 27</div>
     </section>
 
