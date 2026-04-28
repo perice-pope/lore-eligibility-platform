@@ -362,8 +362,14 @@ lore-eligibility-platform/
   off without breaking IDV for live members. See [docs/migration-plan.md](docs/migration-plan.md)
   for the dual-run-then-cutover plan; the actual phasing should come from a working session
   with the on-call team.
-- **Treat the AI components as augmentation, never gates.** A staff engineer's job is to make
-  sure that when the LLM returns garbage, a human gets paged with enough context to fix it in
-  ten minutes. Schema-inference output is *always* reviewed before promotion. Entity-resolution
-  decisions below the auto-merge threshold queue to a human. Bedrock model upgrades are gated
-  behind a regression run on a labeled holdout. Always.
+- **Use AI to help, never to decide on its own.** A staff engineer's job is to make sure that
+  when the AI gets something wrong, a human gets alerted fast — with enough context to fix it
+  inside ten minutes. In practice that means three things:
+    - When the AI suggests how to interpret a new partner's file, an engineer reviews and signs
+      it off in git before any data flows through it.
+    - When the AI tries to match a sign-up to an existing member but isn't confident enough, the
+      match goes into a human review queue instead of being merged automatically.
+    - Before we upgrade to a newer version of the AI model, we test it against a set of
+      known-correct examples first to confirm the new model is actually better than the old one.
+
+  The AI is fast and saves real engineering time. It isn't trusted on its own.
