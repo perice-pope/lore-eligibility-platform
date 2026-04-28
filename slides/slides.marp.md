@@ -136,15 +136,18 @@ Soda gates · OpenLineage lineage · Datadog observability · Terraform IaC
 
 ---
 
-## Three storage tiers — why each one
+## The data flows through four homes
 
-| Tier | Engine | Purpose | Read latency |
+Each tier has one job. Mixing them up is the most common mistake teams make.
+
+| # | Tier | What it holds | Tech |
 |---|---|---|---|
-| **Bronze** | S3 + Iceberg | Replay, audit, source fidelity | seconds (Athena) |
-| **Gold** | Snowflake | Analytics, dbt, BI, masked views | 1–10 sec |
-| **Hot replica** | Aurora Postgres | IDV API hot path | < 10 ms |
+| **1** | **Raw landing** | Exactly what the partner sent. Untouched. *"What did Acme send us last Tuesday?"* | S3 + KMS |
+| **2** | **Bronze + Silver** | Parsed and cleansed. PII tokenized. Ready for analytics. | Iceberg on S3 |
+| **3** | **Gold** | One golden record per person. Analytics warehouse reads from here. | Snowflake |
+| **4** | **Hot replica** | What the sign-up app reads. **< 10 ms reads.** | Aurora Postgres |
 
-> Putting Aurora in front of Snowflake is the design move that lets us hit p99 < 150ms on the IDV API while still using Snowflake for analytics. **Snowflake is not an OLTP database; treating it as one is the most common mistake teams make.**
+> Why a separate hot tier? **Snowflake is built for big analytics queries, not for sub-second sign-up lookups.** Forcing the sign-up form to wait on Snowflake is the single most common mistake teams make.
 
 ---
 
@@ -314,105 +317,75 @@ ALTER TABLE gold.eligibility_member
 
 ---
 
-## DDL — bronze, silver, gold, Aurora
+## Who sees what — at the database
 
-**Two design moves:**
+The same table, three different views — the database itself enforces it. Apps don't have to know.
 
-- **Bronze stores `raw_payload` as JSON, not a fixed schema.** Schema-on-read. Change the canonical schema without rewriting bronze. Replay always works.
-- **Gold has dynamic masking + row-access policies.** IDV service sees full data. Analyst sees DOB masked to year. Compliance sees everything, audit-logged. Zero application-layer changes.
+| Role | What they see | Why |
+|---|---|---|
+| **Sign-up app** | Full DOB, ZIP, last-4 SSN | It needs them to verify identity |
+| **Analyst / BI** | DOB year only · SSN columns return null | Cohort analysis works fine without precise PII |
+| **Compliance** | Everything, every access logged | Auditable HIPAA trail |
 
-```sql
-CREATE OR REPLACE ROW ACCESS POLICY rap_partner_visibility
-  AS (partner_id VARCHAR) RETURNS BOOLEAN ->
-    EXISTS (
-      SELECT 1 FROM admin.engineer_partner_grants g
-       WHERE g.engineer = CURRENT_USER()
-         AND g.partner_id = partner_id
-         AND g.granted_until > CURRENT_TIMESTAMP()
-    )
-    OR CURRENT_ROLE() IN ('IDV_SERVICE_ROLE','COMPLIANCE_ROLE');
-```
+> Three lines of SQL. Zero application changes. **The database is the security boundary, not the app.**
 
 ---
 
-## Cleansing SQL — duplicate PII detection
+## Detecting "is this the same person?"
 
-Hard signal (tokenized SSN) *plus* soft signal (DOB + soundex + ZIP3). Triangulation, not single-rule.
+We never trust a single rule. We triangulate two signals.
 
-```sql
-WITH ssn_dupes AS (
-    SELECT ssn_token,
-           ARRAY_AGG(silver_record_id ORDER BY updated_at DESC) AS records,
-           ARRAY_AGG(DISTINCT partner_id) AS partners
-      FROM silver.eligibility_member
-     WHERE ssn_token IS NOT NULL AND is_quarantined = false
-     GROUP BY ssn_token
-    HAVING COUNT(DISTINCT (partner_id || '|' || partner_member_id)) > 1
-),
-soft_dupes AS (
-    SELECT dob, SOUNDEX(last_name) AS sx, SUBSTR(zip,1,3) AS z3,
-           UPPER(LEFT(first_name,1)) AS fi,
-           ARRAY_AGG(silver_record_id) AS records
-      FROM silver.eligibility_member
-     GROUP BY 1,2,3,4
-    HAVING COUNT(DISTINCT (partner_id || '|' || partner_member_id)) > 1
-)
-SELECT 'hard' AS sig, * FROM ssn_dupes
-UNION ALL
-SELECT 'soft' AS sig, * FROM soft_dupes;
-```
+| Signal | What it is | Strength |
+|---|---|---|
+| **Hard** | Same tokenized SSN | Rare and certain — the same person, every time |
+| **Soft** | Same DOB + name-sound + ZIP-prefix | Catches typos, marriage names, "Bob vs Robert" — needs a second look |
+
+**How decisions roll up:**
+- Hard match → auto-merge
+- Soft match alone → human review queue
+- Neither → new record
+
+> Pure rules miss 15–30% of real matches. Pure ML fails a HIPAA audit. **Two signals + a human-in-the-loop wins on every axis.**
 
 ---
 
-## Versioned data contract — partner API surface
+## The data contract — a translator the team controls
 
-```yaml
-partner_id: acme-corp
-contract_version: 1
-source_format: csv
-expected_cadence: daily
+Partners send messy data. The contract turns chaos into one stable shape downstream tools depend on.
 
-columns:
-  - source_column: "SSN"
-    canonical_field: ssn
-    confidence: 1.00
-    pii_tier: TIER_1_DIRECT
-    cleansing_rules:
-      - validate_ssn_format
-      - tokenize_via_skyflow
-      - store_last_4_only
-
-quality_thresholds:
-  completeness_required_fields: [last_name, first_name, dob, effective_start_date]
-  max_quarantine_pct: 1.0
-  max_freshness_hours: 30
-
-retention:
-  bronze_years: 7
-  delete_on_offboard_after_days: 90
+```
+   Acme HR system   →   [ Data contract ]   →    Our pipeline
+   (CSV, MM/DD/YYYY)     One YAML in git          Stable shape
+                         Versioned                ISO dates
+                         Reviewed                 Tier-tagged PII
+                         Signed off               Auto-quarantine rules
 ```
 
-In git. Reviewed, signed, versioned. Schema drift = new contract version + regression run.
+Each contract declares: **which fields are PII tier 1**, **required completeness**, **expected cadence**, **retention**, **auto-quarantine thresholds**.
+
+> Partner changes their format? **Bump the contract version, regression-test, deploy.** No silent breakage. No mystery.
 
 ---
 
-## Quality gates — Soda + dbt
+## The P0 guardrail — PII can never leak silently
 
-The check below is the **P0 PII-leak detector**:
+**🚨 Severity: critical**
 
-```yaml
-- failed rows:
-    name: ssn_token_format_check
-    fail query: |
-      SELECT silver_record_id, ssn_token
-        FROM silver.eligibility_member
-       WHERE ssn_token IS NOT NULL
-         AND (ssn_token NOT LIKE 'tok\_%'
-              OR REGEXP_LIKE(ssn_token, '[0-9]{3}-[0-9]{2}-[0-9]{4}'))
-    attributes:
-      owner: security
-      severity: critical
+If a raw SSN ever appears in a column meant to hold only a token, the build fails, promotion to production stops, and on-call gets paged within seconds.
+
+**Every promotion between layers passes through automated quality checks:**
+
 ```
+Bronze (raw) → Cleansing job → ✓ Quality check → Silver (analytics-safe)
+```
+
+If any check fails:
+
+```
+Cleansing job → ✗ Quality check → Build halts · on-call paged · partner alerted
+```
+
+> This is what **"data contract enforced"** actually means in practice — not a doc, a gate.
 
 If a raw SSN-shaped value *ever* appears in `ssn_token`, this fails the silver build, blocks promotion to gold, and pages on-call. **That's what "data contract enforced" looks like.**
 
@@ -483,6 +456,6 @@ Bedrock cost levers if it diverges from forecast: switch most adjudications to *
 
 # Thank you.
 
-github.com/perice-pope/lore-eligibility-platform · *public*
+github.com/perice-pope/lore-eligibility-platform
 
 **Questions?**

@@ -11,19 +11,28 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
 
+  <!-- Modern type stack via Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
   <style>
     :root {
       --lore-green: #19c39e;
+      --lore-green-soft: #6cd9be;
       --lore-deep: #0c2229;
       --lore-mid: #163b48;
-      --lore-soft: #b8e6dc;
+      --lore-soft: #c5e8df;
       --lore-warn: #f1b04c;
       --lore-red: #ed6864;
+      --lore-blue: #6aa9ff;
     }
 
     .reveal {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-      font-weight: 300;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+      font-feature-settings: "ss01", "cv01", "cv11";
+      font-weight: 400;
+      letter-spacing: -0.005em;
     }
 
     .reveal .slides { text-align: left; }
@@ -31,32 +40,59 @@
     .reveal .slides section h2,
     .reveal .slides section h3 {
       text-transform: none;
-      letter-spacing: -0.02em;
       color: var(--lore-green);
-      font-weight: 600;
-      margin-bottom: 0.4em;
+      font-weight: 700;
+      margin-bottom: 0.5em;
+      letter-spacing: -0.025em;
     }
 
-    .reveal h1 { font-size: 2.2em; }
-    .reveal h2 { font-size: 1.55em; }
-    .reveal h3 { font-size: 1.15em; color: var(--lore-soft); }
+    .reveal h1 { font-size: 2.6em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.85em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.25em; color: var(--lore-soft); font-weight: 600; }
 
-    .reveal section { font-size: 0.62em; line-height: 1.5; }
-    .reveal p, .reveal li { color: #e8eef0; }
+    .reveal section { font-size: 0.85em; line-height: 1.55; }
+    .reveal p, .reveal li { color: #eef3f4; }
+    .reveal li { margin: 0.25em 0; }
     .reveal strong { color: #ffffff; font-weight: 600; }
     .reveal em { color: var(--lore-soft); font-style: italic; }
-    .reveal a { color: var(--lore-green); }
-    .reveal pre code { font-size: 0.78em; line-height: 1.45; padding: 0.8em; border-radius: 6px; }
-    .reveal table { font-size: 0.85em; border-collapse: collapse; }
-    .reveal th { color: var(--lore-soft); font-weight: 600; border-bottom: 1px solid var(--lore-mid); padding: 0.4em 0.7em; }
-    .reveal td { padding: 0.35em 0.7em; border-bottom: 1px solid #1e323b; }
+    .reveal a { color: var(--lore-green); text-decoration: none; }
+
+    .reveal pre, .reveal code {
+      font-family: 'JetBrains Mono', "SF Mono", Menlo, Consolas, monospace;
+      font-feature-settings: "calt" 1;
+    }
+    .reveal pre code {
+      font-size: 0.82em;
+      line-height: 1.55;
+      padding: 0.9em 1.1em;
+      border-radius: 8px;
+      background: #08171c;
+      border: 1px solid #1a3741;
+    }
+    .reveal :not(pre) > code {
+      background: rgba(25, 195, 158, 0.12);
+      color: var(--lore-green);
+      padding: 0.05em 0.35em;
+      border-radius: 4px;
+      font-size: 0.92em;
+    }
+    .reveal table { font-size: 0.92em; border-collapse: collapse; }
+    .reveal th {
+      color: var(--lore-soft);
+      font-weight: 600;
+      border-bottom: 1px solid var(--lore-mid);
+      padding: 0.5em 0.8em;
+      text-align: left;
+    }
+    .reveal td { padding: 0.45em 0.8em; border-bottom: 1px solid #1e323b; }
     .reveal blockquote {
       border-left: 3px solid var(--lore-green);
-      padding: 0.35em 0.9em;
-      margin: 0.5em 0;
-      font-style: italic;
+      padding: 0.5em 1em;
+      margin: 0.6em 0;
       color: var(--lore-soft);
-      background: rgba(25, 195, 158, 0.05);
+      background: rgba(25, 195, 158, 0.06);
+      border-radius: 0 6px 6px 0;
+      font-style: normal;
     }
 
     .title-slide {
@@ -222,6 +258,171 @@
       font-size: 1.3em;
       z-index: 2;
     }
+
+    /* ─── Tier stack (storage layers visual) ─── */
+    .tier-stack {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 0.7em;
+      margin-top: 0.6em;
+    }
+    .tier {
+      background: rgba(25, 195, 158, 0.05);
+      border: 1px solid var(--lore-mid);
+      border-radius: 10px;
+      padding: 0.9em 0.8em;
+      text-align: center;
+      position: relative;
+    }
+    .tier-num {
+      display: inline-block;
+      width: 28px; height: 28px;
+      line-height: 28px;
+      border-radius: 50%;
+      background: var(--lore-green);
+      color: var(--lore-deep);
+      font-weight: 700;
+      margin-bottom: 0.5em;
+    }
+    .tier h3 { color: #fff; font-size: 1.05em; margin: 0 0 0.4em; }
+    .tier p  { font-size: 0.82em; color: var(--lore-soft); margin: 0.2em 0; }
+    .tier .tier-tech {
+      display: inline-block;
+      margin-top: 0.5em;
+      padding: 0.15em 0.55em;
+      background: rgba(25, 195, 158, 0.15);
+      color: var(--lore-green);
+      border-radius: 999px;
+      font-size: 0.72em;
+      font-weight: 600;
+    }
+    .tier:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -0.7em;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--lore-green);
+      font-size: 1.4em;
+      font-weight: 700;
+      z-index: 2;
+    }
+
+    /* ─── Two-signal converge diagram ─── */
+    .signal-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1em;
+      align-items: center;
+      margin-top: 1em;
+    }
+    .signal {
+      background: rgba(25, 195, 158, 0.05);
+      border: 1px solid var(--lore-mid);
+      border-radius: 10px;
+      padding: 0.9em 1em;
+    }
+    .signal.hard { border-left: 4px solid var(--lore-green); }
+    .signal.soft { border-left: 4px solid var(--lore-warn); }
+    .signal h4 {
+      margin: 0 0 0.4em;
+      font-size: 0.85em;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--lore-green);
+    }
+    .signal.soft h4 { color: var(--lore-warn); }
+    .signal p { margin: 0.2em 0; color: #fff; font-size: 1.02em; }
+    .signal small { color: var(--lore-soft); font-size: 0.78em; }
+    .converge-arrow {
+      font-size: 2em;
+      color: var(--lore-green);
+      text-align: center;
+    }
+    .verdict-box {
+      grid-column: 1 / -1;
+      margin-top: 0.4em;
+      background: rgba(241, 176, 76, 0.08);
+      border: 1px dashed var(--lore-warn);
+      border-radius: 8px;
+      padding: 0.7em 1em;
+      text-align: center;
+      color: #fff;
+    }
+
+    /* ─── Translator / contract diagram ─── */
+    .translator {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 0.5em;
+      align-items: center;
+      margin-top: 0.8em;
+    }
+    .translator-node {
+      background: rgba(25, 195, 158, 0.05);
+      border: 1px solid var(--lore-mid);
+      border-radius: 10px;
+      padding: 0.9em 0.8em;
+      text-align: center;
+    }
+    .translator-node.contract {
+      background: rgba(25, 195, 158, 0.10);
+      border: 2px solid var(--lore-green);
+    }
+    .translator-node h4 { margin: 0 0 0.3em; color: #fff; font-size: 0.95em; }
+    .translator-node small { color: var(--lore-soft); font-size: 0.78em; line-height: 1.4; display: block; }
+    .translator .arrow { color: var(--lore-green); font-size: 1.6em; font-weight: 700; }
+
+    /* ─── P0 alarm visual ─── */
+    .alarm {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1.2em;
+      align-items: center;
+      background: rgba(237, 104, 100, 0.08);
+      border: 1px solid var(--lore-red);
+      border-radius: 12px;
+      padding: 1em 1.3em;
+      margin-top: 0.8em;
+    }
+    .alarm .icon {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: rgba(237, 104, 100, 0.18);
+      border: 2px solid var(--lore-red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2em;
+    }
+    .alarm h4 {
+      margin: 0 0 0.3em;
+      color: var(--lore-red);
+      font-size: 0.85em;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .alarm p { margin: 0.2em 0; color: #fff; font-size: 1.05em; }
+
+    .gate-flow {
+      display: flex;
+      gap: 0.5em;
+      margin-top: 0.8em;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .gate-step {
+      background: var(--lore-deep);
+      border: 1px solid var(--lore-mid);
+      border-radius: 6px;
+      padding: 0.5em 0.9em;
+      color: var(--lore-soft);
+      font-size: 0.85em;
+    }
+    .gate-step.fail { border-color: var(--lore-red); color: var(--lore-red); font-weight: 600; }
+    .gate-step.success { border-color: var(--lore-green); color: var(--lore-green); }
+    .gate-arrow { color: var(--lore-green); font-size: 1.2em; font-weight: 700; }
 
     .pill {
       display: inline-block;
@@ -471,41 +672,42 @@
       <div class="footer-slide-num">07 / 27</div>
     </section>
 
-    <!-- ========================= 8. THREE STORAGE TIERS ========================= -->
+    <!-- ========================= 8. FOUR DATA HOMES ========================= -->
     <section>
-      <h2>Three storage tiers — why each one</h2>
-      <table>
-        <thead>
-          <tr><th>Tier</th><th>Engine</th><th>Purpose</th><th>Cost</th><th>Read latency</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Bronze</strong></td>
-            <td>S3 + Iceberg</td>
-            <td>Replay, audit, source fidelity</td>
-            <td>$0.023 / GB-month</td>
-            <td>seconds (Athena)</td>
-          </tr>
-          <tr>
-            <td><strong>Gold</strong></td>
-            <td>Snowflake</td>
-            <td>Analytics, dbt, BI, masked views</td>
-            <td>$$ per query</td>
-            <td>1–10 sec</td>
-          </tr>
-          <tr>
-            <td><strong>Hot replica</strong></td>
-            <td>Aurora Postgres</td>
-            <td>IDV API hot path</td>
-            <td>$$ per hour</td>
-            <td>&lt; 10 ms</td>
-          </tr>
-        </tbody>
-      </table>
-      <blockquote>
-        Putting Aurora in front of Snowflake is the design move that lets us hit p99 &lt; 150ms
-        on the IDV API while still using Snowflake for analytics. <strong>Snowflake is not an OLTP
-        database; treating it as one is the most common mistake teams make.</strong>
+      <h2>The data flows through four homes</h2>
+      <p>Each tier has one job. Mixing them up is the most common mistake teams make.</p>
+
+      <div class="tier-stack">
+        <div class="tier">
+          <div class="tier-num">1</div>
+          <h3>Raw landing</h3>
+          <p>Exactly what the partner sent. Untouched.</p>
+          <p><em>"What did Acme send us last Tuesday?"</em></p>
+          <span class="tier-tech">S3 + KMS</span>
+        </div>
+        <div class="tier">
+          <div class="tier-num">2</div>
+          <h3>Bronze + Silver</h3>
+          <p>Parsed and cleansed. PII tokenized. Ready for analytics.</p>
+          <span class="tier-tech">Iceberg on S3</span>
+        </div>
+        <div class="tier">
+          <div class="tier-num">3</div>
+          <h3>Gold</h3>
+          <p>One golden record per person. Analytics warehouse reads from here.</p>
+          <span class="tier-tech">Snowflake</span>
+        </div>
+        <div class="tier">
+          <div class="tier-num">4</div>
+          <h3>Hot replica</h3>
+          <p>What the sign-up app reads. <strong>&lt; 10 ms reads.</strong></p>
+          <span class="tier-tech">Aurora Postgres</span>
+        </div>
+      </div>
+
+      <blockquote style="margin-top: 1em;">
+        Why a separate hot tier? <strong>Snowflake is built for big analytics queries, not for sub-second sign-up lookups.</strong>
+        Forcing the sign-up form to wait on Snowflake is the single most common mistake teams make.
       </blockquote>
       <div class="footer-slide-num">08 / 27</div>
     </section>
@@ -750,102 +952,132 @@ ALTER TABLE gold.eligibility_member MODIFY COLUMN dob SET MASKING POLICY mask_do
       <div class="footer-slide-num" style="color: var(--lore-soft);">18 / 27</div>
     </section>
 
-    <!-- ========================= 19. DDL ========================= -->
+    <!-- ========================= 19. WHO SEES WHAT (masking) ========================= -->
     <section>
-      <h2>DDL — bronze, silver, gold, Aurora</h2>
-      <p>Two design moves:</p>
-      <ul>
-        <li><strong>Bronze stores <code>raw_payload</code> as JSON, not a fixed schema.</strong> Schema-on-read. We change the canonical schema without rewriting bronze. Replay always works.</li>
-        <li><strong>Gold has dynamic masking + row access policies.</strong> The IDV service role sees full data. An analyst sees DOB masked to year. Compliance sees everything, audit-logged. Zero application-layer changes.</li>
-      </ul>
-      <pre style="font-size: 0.65em;"><code class="language-sql">CREATE OR REPLACE ROW ACCESS POLICY rap_partner_visibility AS (partner_id VARCHAR) RETURNS BOOLEAN ->
-  EXISTS (
-    SELECT 1 FROM admin.engineer_partner_grants g
-     WHERE g.engineer = CURRENT_USER()
-       AND g.partner_id = partner_id
-       AND g.granted_until > CURRENT_TIMESTAMP()
-  )
-  OR CURRENT_ROLE() IN ('IDV_SERVICE_ROLE','COMPLIANCE_ROLE');
+      <h2>Who sees what — at the database</h2>
+      <p>The same table, three different views — the database itself enforces it. Apps don't have to know.</p>
 
-ALTER TABLE gold.eligibility_member ADD ROW ACCESS POLICY rap_partner_visibility ON (primary_partner_id);</code></pre>
+      <div class="three-col" style="margin-top: 1em;">
+        <div class="col" style="background: rgba(106,169,255,0.06); border: 1px solid #2c4d7a; border-radius: 10px; padding: 1em;">
+          <h3 style="color: var(--lore-blue); margin: 0 0 0.5em;">Sign-up app</h3>
+          <p style="margin: 0; color: #fff;">Sees full DOB, ZIP, last-4 SSN.</p>
+          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">It needs them to verify identity.</p>
+        </div>
+        <div class="col" style="background: rgba(25,195,158,0.06); border: 1px solid #1f6a5a; border-radius: 10px; padding: 1em;">
+          <h3 style="color: var(--lore-green); margin: 0 0 0.5em;">Analyst / BI</h3>
+          <p style="margin: 0; color: #fff;">Sees DOB year only. SSN columns return null.</p>
+          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">Their dashboards still work — by year is plenty for cohort analysis.</p>
+        </div>
+        <div class="col" style="background: rgba(241,176,76,0.06); border: 1px solid #7a5b25; border-radius: 10px; padding: 1em;">
+          <h3 style="color: var(--lore-warn); margin: 0 0 0.5em;">Compliance</h3>
+          <p style="margin: 0; color: #fff;">Sees everything, every access logged.</p>
+          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">Audit trail with retention is HIPAA-compliant.</p>
+        </div>
+      </div>
+
+      <blockquote style="margin-top: 1em;">
+        Three lines of SQL. Zero application changes. <strong>The database is the security boundary, not the app.</strong>
+      </blockquote>
+
       <div class="footer-slide-num">19 / 27</div>
     </section>
 
-    <!-- ========================= 20. CLEANSING SQL ========================= -->
+    <!-- ========================= 20. DUPLICATE DETECTION ========================= -->
     <section>
-      <h2>Cleansing SQL — duplicate PII detection</h2>
-      <p style="font-size: 0.9em;">Hard signal (tokenized SSN) <em>plus</em> soft signal (DOB + soundex + ZIP3). Triangulation, not single-rule.</p>
-      <pre style="font-size: 0.62em;"><code class="language-sql">WITH ssn_dupes AS (
-    SELECT ssn_token,
-           ARRAY_AGG(silver_record_id ORDER BY updated_at DESC)   AS silver_records,
-           ARRAY_AGG(DISTINCT partner_id)                         AS partners,
-           COUNT(*)                                               AS occurrences
-      FROM silver.eligibility_member
-     WHERE ssn_token IS NOT NULL AND is_quarantined = false
-     GROUP BY ssn_token
-    HAVING COUNT(DISTINCT (partner_id || '|' || partner_member_id)) > 1
-),
-soft_dupes AS (
-    SELECT dob, SOUNDEX(last_name) AS last_sx, SUBSTR(zip,1,3) AS zip3,
-           UPPER(LEFT(first_name, 1)) AS first_initial,
-           ARRAY_AGG(silver_record_id) AS silver_records,
-           ARRAY_AGG(DISTINCT partner_id) AS partners
-      FROM silver.eligibility_member
-     WHERE dob IS NOT NULL AND is_quarantined = false
-     GROUP BY 1, 2, 3, 4
-    HAVING COUNT(DISTINCT (partner_id || '|' || partner_member_id)) > 1
-)
-SELECT 'hard_ssn_match'  AS signal, ssn_token, silver_records, partners FROM ssn_dupes UNION ALL
-SELECT 'soft_demo_match' AS signal, NULL,      silver_records, partners FROM soft_dupes;</code></pre>
+      <h2>Detecting "is this the same person?"</h2>
+      <p>We never trust a single rule. We triangulate two signals.</p>
+
+      <div class="signal-flow">
+        <div class="signal hard">
+          <h4>Hard signal</h4>
+          <p><strong>Same tokenized SSN</strong></p>
+          <small>Tokens are unique per person, so if two records share one, they're the same person. Rare and certain.</small>
+        </div>
+        <div class="converge-arrow">→</div>
+        <div class="signal soft">
+          <h4>Soft signal</h4>
+          <p><strong>Same DOB + name-sound + ZIP-prefix</strong></p>
+          <small>Catches typos, marriage names, "Bob vs Robert". Imperfect — needs a second look.</small>
+        </div>
+        <div class="verdict-box">
+          <strong>Hard match</strong> → auto-merge ·
+          <strong>Soft match alone</strong> → human review queue ·
+          <strong>Neither</strong> → new record
+        </div>
+      </div>
+
+      <blockquote style="margin-top: 1em;">
+        Pure rules miss 15–30% of real matches. Pure ML fails a HIPAA audit. <strong>Two signals + a human-in-the-loop wins on every axis.</strong>
+      </blockquote>
       <div class="footer-slide-num">20 / 27</div>
     </section>
 
-    <!-- ========================= 21. DATA CONTRACT ========================= -->
+    <!-- ========================= 21. THE DATA CONTRACT ========================= -->
     <section>
-      <h2>Versioned data contract — the partner API surface</h2>
-      <pre style="font-size: 0.65em;"><code class="language-yaml">partner_id: acme-corp
-contract_version: 1
-source_format: csv
-expected_cadence: daily
-expected_land_time_utc: "06:00"
-overall_quality_risk: LOW
+      <h2>The data contract — a translator the team controls</h2>
+      <p>Partners send messy data. The contract turns chaos into one stable shape downstream tools depend on.</p>
 
-columns:
-  - source_column: "SSN"
-    canonical_field: ssn
-    confidence: 1.00
-    pii_tier: TIER_1_DIRECT
-    cleansing_rules: [validate_ssn_format, tokenize_via_skyflow, store_last_4_only]
+      <div class="translator">
+        <div class="translator-node">
+          <h4>Acme HR system</h4>
+          <small>Sends a CSV<br/>"EmployeeID, FirstName,&nbsp;DOB&nbsp;(MM/DD/YYYY)…"</small>
+        </div>
+        <div class="arrow">→</div>
+        <div class="translator-node contract">
+          <h4>Data contract</h4>
+          <small>One YAML file in git.<br/>Versioned. Reviewed. Signed off.</small>
+        </div>
+        <div class="arrow">→</div>
+        <div class="translator-node">
+          <h4>Our pipeline</h4>
+          <small>Sees one stable shape.<br/>"<code>partner_member_id</code>, <code>first_name</code>, <code>dob (ISO)</code>…"</small>
+        </div>
+      </div>
 
-quality_thresholds:
-  completeness_required_fields: [last_name, first_name, dob, effective_start_date]
-  max_quarantine_pct: 1.0
-  max_freshness_hours: 30
-  max_row_count_change_pct: 15
+      <p style="margin-top: 1em;">Each contract also declares: <strong>which fields are PII tier 1</strong>, <strong>required completeness</strong>, <strong>expected cadence</strong>, <strong>retention</strong>, <strong>auto-quarantine thresholds</strong>.</p>
 
-retention:
-  bronze_years: 7
-  delete_on_offboard_after_days: 90</code></pre>
-      <p style="margin-top: 0.5em;">In git. Reviewed, signed, versioned. Schema drift = new contract version + regression run.</p>
+      <blockquote style="margin-top: 0.5em;">
+        Partner changes their format? <strong>Bump the contract version, regression-test, deploy.</strong> No silent breakage. No mystery.
+      </blockquote>
+
       <div class="footer-slide-num">21 / 27</div>
     </section>
 
-    <!-- ========================= 22. SODA + DBT ========================= -->
+    <!-- ========================= 22. P0 GUARDRAIL ========================= -->
     <section>
-      <h2>Quality gates — Soda + dbt</h2>
-      <p>Soda checks are declarative; they run as Dagster asset checks. The check below is the <strong>P0 PII-leak detector</strong>:</p>
-      <pre style="font-size: 0.7em;"><code class="language-yaml">- failed rows:
-    name: ssn_token_format_check
-    fail query: |
-      SELECT silver_record_id, ssn_token
-        FROM silver.eligibility_member
-       WHERE ssn_token IS NOT NULL
-         AND (ssn_token NOT LIKE 'tok\\_%'
-              OR REGEXP_LIKE(ssn_token, '[0-9]{3}-[0-9]{2}-[0-9]{4}'))
-    attributes:
-      owner: security
-      severity: critical</code></pre>
-      <p style="margin-top: 0.5em;">If a raw SSN-shaped value <em>ever</em> appears in the <code>ssn_token</code> column, this fails the silver build, blocks promotion to gold, and pages on-call. That's what "data contract enforced" looks like.</p>
+      <h2>The P0 guardrail — PII can never leak silently</h2>
+
+      <div class="alarm">
+        <div class="icon">🚨</div>
+        <div>
+          <h4>Severity: critical</h4>
+          <p><strong>If a raw SSN ever appears in a column meant to hold only a token,</strong> the build fails, promotion to production stops, and on-call gets paged within seconds.</p>
+        </div>
+      </div>
+
+      <div class="gate-flow">
+        <div class="gate-step">Bronze (raw landing)</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step">Cleansing job</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step success">Quality check ✓</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step">Silver (analytics-safe)</div>
+      </div>
+      <p style="text-align: center; margin: 0.6em 0 0; color: var(--lore-soft); font-size: 0.85em;">
+        Every promotion between layers passes through automated quality checks. If any check fails:
+      </p>
+      <div class="gate-flow" style="margin-top: 0.3em;">
+        <div class="gate-step">Cleansing job</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step fail">Quality check ✗</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step">Build halts · on-call paged · partner alerted</div>
+      </div>
+
+      <blockquote style="margin-top: 0.9em;">
+        This is what <strong>"data contract enforced"</strong> actually means in practice — not a doc, a gate.
+      </blockquote>
       <div class="footer-slide-num">22 / 27</div>
     </section>
 
@@ -925,7 +1157,7 @@ retention:
     <section data-background-color="#0c2229" class="title-slide">
       <h1 style="color: var(--lore-green); font-size: 2.6em;">Thank you.</h1>
       <p style="color: var(--lore-soft); font-size: 1.05em; margin-top: 1em;">
-        github.com/perice-pope/lore-eligibility-platform <span style="color: var(--lore-mid);">·</span> public
+        github.com/perice-pope/lore-eligibility-platform
       </p>
       <p style="color: var(--lore-soft); margin-top: 2em; font-size: 1em;">Questions?</p>
       <div class="footer-slide-num" style="color: var(--lore-soft);">27 / 27</div>
