@@ -351,6 +351,18 @@ Click the `.schema.yaml` file → **Open** (or the **Object actions → Query wi
 *Wrap:*
 > *"The data engineer reviews this YAML, fills in the `REPLACE_ME` fields at the top — partner_id, reviewer, date — and checks it into git as the official contract for this partner. From a five-day human task to a one-hour review of a draft Claude already wrote."*
 
+> **🎙 Q&A backup — if asked *"so what does the YAML actually add to the pipeline?"*:**
+>
+> *"Three things, simply put:"*
+>
+> *"**One** — it turns a five-day engineering job into a one-hour review. Without the YAML, every new partner means an engineer manually reads the CSV, decides what each column means, classifies the PII risk, writes cleansing rules, ships it. With the YAML, Claude does that in ten seconds and the engineer just reviews."*
+>
+> *"**Two** — it makes PII handling automatic downstream. Once the contract is checked in, the rest of the pipeline reads the per-column tier tags and routes data accordingly: TIER_1 columns through Skyflow tokenization, TIER_2 with restricted analytics access, TIER_3 stored normally with audit logging. You can't accidentally store an unprotected SSN because the column was classified *before* the data flowed."*
+>
+> *"**Three** — it's the audit trail. Every column has Claude's reasoning attached — for ZIP it literally cited HIPAA's re-identification rule. When compliance asks 'why is ZIP a quasi-identifier?' three months from now, the answer is in version control next to the data, not in someone's head or a stale Confluence page."*
+>
+> *"One-liner: it's the AI's first draft of the contract that tells the rest of the pipeline how to handle this partner's data — what to tokenize, what to restrict, what to validate — with HIPAA-aware reasoning attached as the audit trail."*
+
 ### Step 4 — verify a person who only exists in that CSV
 
 ```bash
