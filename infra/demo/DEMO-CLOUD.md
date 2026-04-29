@@ -1,14 +1,8 @@
 # Cloud Demo Runbook
 
-**10 minutes. Live AWS. Real DynamoDB, real Lambda, real API Gateway, real S3 event triggers.**
+**8 minutes. Live AWS. Real API Gateway, real Lambda, real DynamoDB, real S3 event-driven file pipeline.**
 
----
-
-## ⚠ Claude is wired via the Anthropic API, not Bedrock
-
-This account's daily Bedrock quota is **0/day** (a non-adjustable AWS new-account default — auto-graduates with usage history). To make Beat 4 hit a real Claude model live, the schema-inference Lambda is configured to call **api.anthropic.com directly** using your local `ANTHROPIC_API_KEY`. The Lambda's IAM role still has Bedrock permissions wired (the architecture is identical); the runtime path during the demo is just Anthropic's API.
-
-If anyone asks: *"the AWS-native deployment uses Bedrock — same prompt, same model, same response contract. We routed through the Anthropic API for this demo because the AWS account is brand new and Bedrock quotas haven't auto-graduated yet."*
+The schema-inference Lambda (Claude via Anthropic API) is deployed but not demoed live — it's a "we also built this" answer if anyone asks about handling brand-new partner shapes. Demo the natural file-flow story instead, it's stronger.
 
 ---
 
@@ -18,12 +12,6 @@ Open a fresh terminal:
 
 ```bash
 cd ~/Documents/lore-case-study/lore-eligibility-platform/infra/demo
-```
-
-**Set your Anthropic API key** (so Beat 4 calls real Claude):
-
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."   # paste your key here
 ```
 
 Deploy fresh (idempotent — safe to re-run if anything looks off):
@@ -55,9 +43,9 @@ Expected: `ok`
 | Tab | URL | When you'll switch to it |
 |---|---|---|
 | DynamoDB items | https://us-east-1.console.aws.amazon.com/dynamodbv2/home?region=us-east-1#item-explorer?table=lore-elig-demo-golden-records | Beat 3 |
-| Lambda IDV API | https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/lore-elig-demo-idv-api | Beat 6 |
-| CloudWatch metrics | https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~()&query=~'*7bAWS*2fLambda*2cFunctionName*7d%20FunctionName*3d*22lore-elig-demo-idv-api*22 | Beat 6 |
-| S3 raw bucket | https://us-east-1.console.aws.amazon.com/s3/buckets/lore-elig-demo-raw-185529490129?region=us-east-1 | Beat 5 |
+| S3 raw bucket | https://us-east-1.console.aws.amazon.com/s3/buckets/lore-elig-demo-raw-185529490129?region=us-east-1 | Beat 4 |
+| Lambda IDV API | https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/lore-elig-demo-idv-api | Beat 5 |
+| CloudWatch metrics | https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~()&query=~'*7bAWS*2fLambda*2cFunctionName*7d%20FunctionName*3d*22lore-elig-demo-idv-api*22 | Beat 5 |
 | API Gateway | https://us-east-1.console.aws.amazon.com/apigateway/main/apis | Optional / Beat 1 |
 
 Also have the terminal pre-positioned with the `cd` and `export` lines above already executed. You should not need to type any setup commands during the live demo.
@@ -87,7 +75,7 @@ Also have the terminal pre-positioned with the `cd` and `export` lines above alr
   - **NEEDS_REVIEW** — only a fuzzy near-match → human review or knowledge-based questions
   - **NOT_FOUND** — no record matches
 - Cold start under 1 second; warm calls under 100 ms
-- **No Claude call on this hot path** — every verify decision is a fast database lookup. Claude shows up in **Beat 4** doing the harder job of understanding a brand-new partner CSV.
+- **No Claude call on this hot path** — every verify decision is a fast database lookup.
 
 ### DynamoDB — *the directory of who's who*
 - Holds **five "golden records"** — our canonical members. Specifically: Robert Smith, Maria Garcia-Lopez, Lin Chen, Marcus Williams, Ethan O'Brien.
@@ -187,73 +175,23 @@ Click into any record (e.g. `G-0001`) to expand fields. Highlight `lookup_key`.
 
 ---
 
-## Beat 4 — Schema inference for an unknown partner file (2 min)
+## Beat 4 — Drop a partner file in S3, watch it flow (2.5 min)
 
-**🖥 Show on screen:** terminal.
-
-**🎙 Say first:**
-> *"Now the harder problem. A new partner sends us a CSV. We've never seen the columns. In the legacy world that's a five-day data-engineering ticket. Watch what happens."*
-
-**Run:**
-
-```bash
-SAMPLE=$(python3 -c "
-import csv, json
-with open('../../samples/partner_acme_employer.csv') as f:
-    rows = list(csv.DictReader(f))[:10]
-print(json.dumps({'filename':'partner_acme_employer.csv', 'sample': rows, 'mode': 'anthropic'}))
-")
-echo "$SAMPLE" > /tmp/inference_payload.json
-
-aws lambda invoke \
-  --function-name lore-elig-demo-schema-inference \
-  --region us-east-1 \
-  --cli-binary-format raw-in-base64-out \
-  --payload file:///tmp/inference_payload.json \
-  /tmp/inference_response.json >/dev/null
-
-python3 -c "
-import json
-r = json.load(open('/tmp/inference_response.json'))
-body = json.loads(r['body'])
-print('mode:           ', body['mode'])
-print('model:          ', body['model_id'])
-print('detected format:', body['detected_format'])
-print('overall risk:   ', body['overall_quality_risk'])
-print()
-print(f\"{'source_column':<20}{'canonical_field':<22}{'pii_tier':<14}{'confidence'}\")
-print('-' * 66)
-for c in body['columns']:
-    print(f\"{c['source_column']:<20}{(c['canonical_field'] or '-'):<22}{c['pii_tier']:<14}{c['confidence']:.2f}\")
-print()
-print('---- draft data contract (first 30 lines) ----')
-print('\n'.join(body['draft_contract_yaml'].splitlines()[:30]))
-"
-```
-
-**Expected:** First line `mode: anthropic`, model `claude-sonnet-4-6`, then a column-by-column mapping with `pii_tier` and `confidence`, followed by the draft YAML contract.
-
-**🎙 Say:**
-> *"Ten rows of an unknown CSV. The Lambda hands them to Claude with a structured prompt. Claude returns a column-by-column canonical mapping — PII tier and confidence per column — plus a draft data-contract YAML the data engineer reviews and checks into git. **In a Lore production environment this is what cuts new-partner onboarding from five days of human data engineering to one hour of human review.**"*
-
-> *"Notice the `pii_tier` column — Claude flagged the SSN column as TIER_1_DIRECT and recommended Skyflow tokenization in the cleansing rules. That's the kind of judgment that's hard to encode as a rule but easy for an LLM that's seen healthcare schemas. The whole call took about two seconds end-to-end through Lambda."*
-
----
-
-## Beat 5 — S3 → Lambda → DynamoDB pipeline (2 min)
-
-**🖥 Show on screen:** split terminal panes if you have iTerm/tmux. Otherwise just one terminal — show the log tail before the upload.
+**🖥 Show on screen:** S3 raw bucket tab, browsed to the bucket root. Have a terminal pane visible alongside (or split-screen).
 
 **🎙 Say first:**
-> *"Last piece. A partner drops a CSV in S3. EventBridge triggers a Lambda. Records land in DynamoDB. All event-driven. No polling, no cron."*
+> *"Now the bigger story. A partner — Acme Corp — sends us a CSV of their employees. We need to land it, parse it, drop columns we don't have a contract for, normalize the rest, and write the records into DynamoDB so they're verifiable through the same API. All event-driven — no polling, no cron, no scheduled job. Watch."*
 
-**Pane 1 — start the log tail:**
+**Pane 1 — start the file_processor log tail:**
 
 ```bash
 aws logs tail /aws/lambda/lore-elig-demo-file-processor --follow --region us-east-1
 ```
 
-Leave that running. Open a second pane (or duck out of `tail -f` once you've seen output).
+Leave that running.
+
+**🎙 Say (point at the S3 console):**
+> *"Right now the raw bucket is empty under `inbox/acme-corp/`. I'm about to drop a real CSV — ten Acme employees — into that prefix from the terminal."*
 
 **Pane 2 — drop the CSV:**
 
@@ -262,40 +200,38 @@ aws s3 cp ../../samples/partner_acme_employer.csv \
   s3://${RAW_BUCKET}/inbox/acme-corp/$(date +%s).csv
 ```
 
-Within 5–10 seconds, the log pane will show parsing + DynamoDB writes.
+**🎙 Say (refresh the S3 console — show the file appear, then point at the log pane as it scrolls):**
+> *"File landed in S3. S3 fired an `ObjectCreated` event. That event triggered the file_processor Lambda — you can see it in the logs right now. The Lambda is parsing the CSV, mapping the columns into our canonical shape, dropping anything we don't have in the data contract, stripping the full SSN down to last-four — that's data minimization for HIPAA — and upserting ten records into DynamoDB."*
 
-**🎙 Say while the logs scroll:**
-> *"The file landed under `raw/inbox/acme-corp/`. S3 fired an `ObjectCreated` notification. The Lambda parsed the CSV, dropped columns we don't have a contract for — that's data minimization — converted SSNs to last-four-only, and upserted ten records into DynamoDB."*
-
-**Once logs settle, kill the tail (Ctrl-C in pane 1) and verify:**
+**Once logs settle, Ctrl-C the tail and confirm the count:**
 
 ```bash
 aws dynamodb scan --table-name lore-elig-demo-golden-records \
-  --select COUNT --region us-east-1
+  --select COUNT --region us-east-1 --output text --query 'Count'
 ```
 
-**Expected:** Count went from 5 to 15 (or higher if you re-ran).
+**Expected:** `15` (was 5 before the drop, +10 from the CSV).
 
 **🎙 Say:**
 > *"Item count went from five to fifteen. The ten Acme employees are now verifiable through the same IDV API."*
 
-**Verify a freshly-loaded employee:**
+**Verify a person who only existed in that CSV — Jin Park, who was NOT in the seeded golden records:**
 
 ```bash
 curl -sX POST $API/v1/verify \
   -H 'content-type: application/json' \
-  -d '{"first_name":"Maria","last_name":"Garcia-Lopez","dob":"1985-09-30","zip":"78701","ssn_last4":"4321","partner_id":"acme-corp"}' \
+  -d '{"first_name":"Jin","last_name":"Park","dob":"1978-03-22","zip":"11530","ssn_last4":"3456","partner_id":"acme-corp"}' \
   | python3 -m json.tool
 ```
 
-**Expected:** `"status": "VERIFIED"` for Maria.
+**Expected:** `"status": "VERIFIED"` for Jin Park.
 
 **🎙 Say:**
-> *"Maria was a row in the CSV ninety seconds ago. End-to-end: file lands, gets ingested, becomes verifiable. That's the contract every partner integration follows."*
+> *"Jin Park was a row in the CSV thirty seconds ago. He wasn't in the seeded golden records — he came in entirely through the file flow. End-to-end: file lands in S3, ingested by Lambda, becomes verifiable. That's the contract every partner integration follows — drop a file, the records are live."*
 
 ---
 
-## Beat 6 — Latency + cost story in CloudWatch (60 sec)
+## Beat 5 — Latency + cost story in CloudWatch (60 sec)
 
 **🖥 Show on screen:** Lambda IDV API tab → click **Monitor** → **View CloudWatch metrics**.
 
@@ -311,7 +247,7 @@ Point at duration p99 specifically. Then to error count = 0.
 
 ---
 
-## Beat 7 — Close (30 sec)
+## Beat 6 — Close (30 sec)
 
 **🖥 Show on screen:** terminal or your architecture diagram, your call.
 
@@ -358,15 +294,12 @@ export API="https://$(aws apigatewayv2 get-apis --region us-east-1 \
 ./deploy-cli.sh   # idempotent, ~90 sec; updates code in place
 ```
 
-**If Beat 4 returns `"mode": "local_mock"` instead of `"anthropic"`:**
-The Lambda's `ANTHROPIC_API_KEY` env var isn't set. Fix:
+**If the S3 drop in Beat 4 doesn't trigger the Lambda within ~10s:**
+Check the bucket notification config:
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
-./deploy-cli.sh   # idempotent, picks up the key and updates the Lambda env
+aws s3api get-bucket-notification-configuration --bucket "$RAW_BUCKET"
 ```
+You should see a `LambdaFunctionConfigurations` entry pointing at file-processor. If it's empty, re-run `./deploy-cli.sh`.
 
-**If Beat 4 returns an HTTP 401 / 403 from Anthropic:**
-Bad/expired API key. Replace the value in `ANTHROPIC_API_KEY` and re-run `./deploy-cli.sh`.
-
-**If you want to deliberately demo the local-fallback (e.g., key is dead and no time to fix):**
-Change `'mode': 'anthropic'` to `'mode': 'local'` in the Beat 4 payload — same response shape, deterministic heuristic. Audience can't tell unless you announce it.
+**If anyone asks "where does Claude / the AI piece live?":**
+The schema-inference Lambda (`lore-elig-demo-schema-inference`) is deployed and wired to call Claude via the Anthropic API for unknown partner shapes — first-time partners whose column names we haven't seen. We didn't demo it live because Acme's column shape is already in the file_processor's contract; the live moment-of-Claude story would need a brand-new partner format. Happy to demo it after the panel.
