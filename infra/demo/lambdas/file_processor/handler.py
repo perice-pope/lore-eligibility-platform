@@ -27,9 +27,11 @@ log.setLevel(logging.INFO)
 
 DDB_TABLE = os.environ["LORE_IDV_DDB_TABLE"]
 BRONZE_BUCKET = os.environ.get("BRONZE_BUCKET")
+SCHEMA_INFERENCE_FN = os.environ.get("SCHEMA_INFERENCE_FN")
 
 s3 = boto3.client("s3")
 ddb = boto3.resource("dynamodb").Table(DDB_TABLE)
+lambda_client = boto3.client("lambda")
 
 
 def handler(event, _context):
@@ -56,7 +58,9 @@ def handler(event, _context):
 
         if BRONZE_BUCKET:
             today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-            bronze_key = f"partner_id={partner_id}/dt={today}/{key.split('/')[-1]}"
+            bronze_prefix = f"partner_id={partner_id}/dt={today}"
+            filename = key.split("/")[-1]
+            bronze_key = f"{bronze_prefix}/{filename}"
             s3.copy_object(
                 Bucket=BRONZE_BUCKET,
                 Key=bronze_key,
@@ -64,7 +68,62 @@ def handler(event, _context):
             )
             log.info("copied to s3://%s/%s", BRONZE_BUCKET, bronze_key)
 
+            # Ask schema-inference (Claude) for a draft data contract on the
+            # raw rows and write it as a sidecar YAML next to the data file.
+            # Best-effort — if it fails, the data ingest still succeeded.
+            if SCHEMA_INFERENCE_FN and rows:
+                _write_schema_contract(
+                    fn_name=SCHEMA_INFERENCE_FN,
+                    sample_rows=rows[:10],
+                    filename=filename,
+                    bronze_bucket=BRONZE_BUCKET,
+                    bronze_prefix=bronze_prefix,
+                )
+
     return {"statusCode": 200, "body": json.dumps({"records_written": written})}
+
+
+def _write_schema_contract(
+    *, fn_name: str, sample_rows: list[dict], filename: str,
+    bronze_bucket: str, bronze_prefix: str,
+) -> None:
+    # Don't pass `mode` here — let the schema_inference Lambda use its own
+    # LORE_SCHEMA_INFERENCE_MODE env var (set to "anthropic" by deploy-cli.sh
+    # when ANTHROPIC_API_KEY is present, "auto" otherwise). This skips a
+    # ~7s Bedrock-retry penalty when Anthropic is the intended path.
+    payload = json.dumps({
+        "filename": filename,
+        "sample": sample_rows,
+    }).encode("utf-8")
+    try:
+        resp = lambda_client.invoke(
+            FunctionName=fn_name,
+            InvocationType="RequestResponse",
+            Payload=payload,
+        )
+        outer = json.loads(resp["Payload"].read())
+        if outer.get("statusCode") != 200:
+            log.warning("schema_inference returned %s: %s",
+                        outer.get("statusCode"), outer.get("body", "")[:300])
+            return
+        inner = json.loads(outer["body"])
+        yaml_text = inner.get("draft_contract_yaml", "")
+        if not yaml_text:
+            log.warning("schema_inference response had no draft_contract_yaml")
+            return
+        schema_key = f"{bronze_prefix}/{filename}.schema.yaml"
+        s3.put_object(
+            Bucket=bronze_bucket,
+            Key=schema_key,
+            Body=yaml_text.encode("utf-8"),
+            ContentType="text/yaml",
+        )
+        log.info(
+            "schema contract written via mode=%s model=%s -> s3://%s/%s",
+            inner.get("mode"), inner.get("model_id"), bronze_bucket, schema_key,
+        )
+    except Exception:  # noqa: BLE001
+        log.exception("schema inference invocation failed; data ingest still succeeded")
 
 
 def _partner_from_key(key: str) -> str:
@@ -134,8 +193,12 @@ def _row_to_item(row: dict, partner_id: str) -> dict | None:
     if canonical.get("effective_end_date"):
         canonical["effective_end_date"] = _coerce_date(canonical["effective_end_date"]) or None
 
-    # Build the item.
-    grid = str(uuid.uuid5(uuid.NAMESPACE_OID, f"{partner_id}|{canonical['partner_member_id']}"))
+    # Build the item. golden_record_id is a deterministic short ID derived from
+    # (partner_id, partner_member_id). Format matches the hand-seeded G-XXXX ids
+    # (e.g. G-0001, G-7956) so seeded and ingested records sit visually together
+    # in the table.
+    full = uuid.uuid5(uuid.NAMESPACE_OID, f"{partner_id}|{canonical['partner_member_id']}")
+    grid = f"G-{full.hex[:4].upper()}"
     last_name_lower = canonical["last_name"].lower().strip()
     item = {
         "golden_record_id": grid,

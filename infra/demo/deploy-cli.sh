@@ -167,6 +167,12 @@ INLINE_POLICY=$(cat <<EOF
         "arn:aws:bedrock:*:${ACCOUNT}:inference-profile/*",
         "arn:aws:bedrock:*:*:inference-profile/*"
       ]
+    },
+    {
+      "Sid": "InvokeSchemaInference",
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:${REGION}:${ACCOUNT}:function:${PROJECT}-schema-inference"
     }
   ]
 }
@@ -233,7 +239,7 @@ create_or_update_lambda() {
 }
 
 IDV_ENV=$(printf '{"Variables":{"LORE_IDV_STORE_BACKEND":"dynamodb","LORE_IDV_DDB_TABLE":"%s","LORE_BEDROCK_MODEL":"%s","LORE_BEDROCK_EMBED_MODEL":"%s","AWS_LWA_INVOKE_MODE":"response_stream"}}' "${DDB_TABLE}" "${BEDROCK_MODEL}" "${EMBED_MODEL}")
-PROC_ENV=$(printf '{"Variables":{"LORE_IDV_DDB_TABLE":"%s","BRONZE_BUCKET":"%s"}}' "${DDB_TABLE}" "${BUCKET_BRONZE}")
+PROC_ENV=$(printf '{"Variables":{"LORE_IDV_DDB_TABLE":"%s","BRONZE_BUCKET":"%s","SCHEMA_INFERENCE_FN":"%s-schema-inference"}}' "${DDB_TABLE}" "${BUCKET_BRONZE}" "${PROJECT}")
 # Schema inference: prefer the user's local Anthropic API key if set (Bedrock daily quota
 # on this account is 0/day, so direct Anthropic API is the working path for live demos).
 ANTHROPIC_KEY="${ANTHROPIC_API_KEY:-}"

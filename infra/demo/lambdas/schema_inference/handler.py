@@ -32,7 +32,9 @@ def handler(event: dict, _context) -> dict:
     body = _coerce_body(event)
     filename = body.get("filename") or "partner-file.csv"
     sample = body.get("sample") or []
-    requested_mode = body.get("mode", "auto")  # auto | bedrock | local
+    # If the caller doesn't specify a mode, fall through (None) so infer_schema
+    # uses LORE_SCHEMA_INFERENCE_MODE env var instead.
+    requested_mode = body.get("mode")  # None | auto | bedrock | anthropic | local
 
     if not sample:
         return _resp(400, {"error": "missing 'sample' (list of dicts representing rows)"})

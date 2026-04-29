@@ -1,8 +1,8 @@
 # Cloud Demo Runbook
 
-**8 minutes. Live AWS. Real API Gateway, real Lambda, real DynamoDB, real S3 event-driven file pipeline.**
+**~9 minutes. Live AWS. Real API Gateway, real Lambda, real DynamoDB, real S3 event-driven pipeline, real Claude data-contract generation on every file landing.**
 
-The schema-inference Lambda (Claude via Anthropic API) is deployed but not demoed live — it's a "we also built this" answer if anyone asks about handling brand-new partner shapes. Demo the natural file-flow story instead, it's stronger.
+When a partner CSV lands in S3, the `file_processor` Lambda parses it into DynamoDB records *and* invokes the `schema_inference` Lambda, which sends the column structure to **Claude (via the Anthropic API)** and writes a draft data-contract YAML next to the data file in the bronze bucket. Beat 4 shows both outputs side by side in the console.
 
 ---
 
@@ -12,6 +12,12 @@ Open a fresh terminal:
 
 ```bash
 cd ~/Documents/lore-case-study/lore-eligibility-platform/infra/demo
+```
+
+**Set your Anthropic API key** so the schema-inference Lambda hits real Claude (without it, the pipeline still produces a YAML, but it'll be a deterministic local-mock — the audience won't see "Claude" in the output):
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."   # paste your key
 ```
 
 Deploy fresh (idempotent — safe to re-run if anything looks off):
@@ -43,7 +49,8 @@ Expected: `ok`
 | Tab | URL | When you'll switch to it |
 |---|---|---|
 | DynamoDB items | https://us-east-1.console.aws.amazon.com/dynamodbv2/home?region=us-east-1#item-explorer?table=lore-elig-demo-golden-records | Beat 3 |
-| S3 raw bucket | https://us-east-1.console.aws.amazon.com/s3/buckets/lore-elig-demo-raw-185529490129?region=us-east-1 | Beat 4 |
+| S3 raw bucket | https://us-east-1.console.aws.amazon.com/s3/buckets/lore-elig-demo-raw-185529490129?region=us-east-1 | Beat 4 (before drop) |
+| S3 bronze bucket | https://us-east-1.console.aws.amazon.com/s3/buckets/lore-elig-demo-bronze-185529490129?region=us-east-1 | Beat 4 (after drop) |
 | Lambda IDV API | https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/lore-elig-demo-idv-api | Beat 5 |
 | CloudWatch metrics | https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~()&query=~'*7bAWS*2fLambda*2cFunctionName*7d%20FunctionName*3d*22lore-elig-demo-idv-api*22 | Beat 5 |
 | API Gateway | https://us-east-1.console.aws.amazon.com/apigateway/main/apis | Optional / Beat 1 |
@@ -265,12 +272,14 @@ Scroll back to the row list, click `G-0005`.
 
 ---
 
-## Beat 4 — Drop a partner file in S3, watch it flow (2.5 min)
+## Beat 4 — Drop a partner file in S3, watch the full pipeline run (3 min)
 
-**🖥 Show on screen:** S3 raw bucket tab, browsed to the bucket root. Have a terminal pane visible alongside (or split-screen).
+> 📄 **Reference of what the YAML output will look like:** `samples/partner_acme_employer.schema.yaml`. Open this in a separate window/editor before the demo so you know which sections to point at when you click into the live one in S3 (PII tiers, cleansing rules per column, suggested partition column, overall quality risk).
+
+**🖥 Show on screen:** S3 raw bucket tab, browsed to the bucket root. Terminal pane visible alongside.
 
 **🎙 Say first:**
-> *"Now the bigger story. A partner — Acme Corp — sends us a CSV of their employees. We need to land it, parse it, drop columns we don't have a contract for, normalize the rest, and write the records into DynamoDB so they're verifiable through the same API. All event-driven — no polling, no cron, no scheduled job. Watch."*
+> *"Now the bigger story. Acme Corp sends us a CSV of their employees. We need to **(1)** land it, **(2)** parse and ingest the records into DynamoDB so they're verifiable through the same API, AND **(3)** generate a draft data-contract YAML — using Claude — that a data engineer can review and check into git for this partner. All event-driven, all from one file drop."*
 
 **Pane 1 — start the file_processor log tail:**
 
@@ -291,21 +300,42 @@ aws s3 cp ../../samples/partner_acme_employer.csv \
 ```
 
 **🎙 Say (refresh the S3 console — show the file appear, then point at the log pane as it scrolls):**
-> *"File landed in S3. S3 fired an `ObjectCreated` event. That event triggered the file_processor Lambda — you can see it in the logs right now. The Lambda is parsing the CSV, mapping the columns into our canonical shape, dropping anything we don't have in the data contract, stripping the full SSN down to last-four — that's data minimization for HIPAA — and upserting ten records into DynamoDB."*
+> *"File landed. S3 fired an `ObjectCreated` event. That event triggered the file_processor Lambda. Watch the log — it's parsing the CSV, mapping columns into our canonical shape, dropping anything we don't have in the contract, stripping full SSN down to last-four for HIPAA data-minimization, and upserting ten records into DynamoDB. **Then it invokes the schema-inference Lambda** which sends the first 10 rows to Claude and gets back a structured data contract. Both outputs land in bronze."*
 
-**Once logs settle, Ctrl-C the tail and confirm the count:**
+Wait until you see `schema contract written via mode=anthropic` in the log (~6 seconds total). Then Ctrl-C the tail.
+
+### Step 1 — confirm the records landed in DynamoDB
 
 ```bash
 aws dynamodb scan --table-name lore-elig-demo-golden-records \
   --select COUNT --region us-east-1 --output text --query 'Count'
 ```
 
-**Expected:** `15` (was 5 before the drop, +10 from the CSV).
+**Expected:** `15` (was 5 before, +10 from the CSV).
 
 **🎙 Say:**
-> *"Item count went from five to fifteen. The ten Acme employees are now verifiable through the same IDV API."*
+> *"Five became fifteen. The ten Acme employees are now verifiable."*
 
-**Verify a person who only existed in that CSV — Jin Park, who was NOT in the seeded golden records:**
+### Step 2 — show the bronze bucket — both outputs side by side
+
+**🖥 Switch to the S3 bronze bucket tab.**
+
+Drill into `partner_id=acme-corp/dt=2026-04-29/`. You should see **two files** for the just-dropped timestamp:
+
+- `1777482472.csv` — the parsed data, partitioned by partner + date for analytics queries
+- `1777482472.csv.schema.yaml` — the draft data contract Claude generated
+
+**🎙 Say (point at the two files):**
+> *"Two outputs from one file drop. The CSV is the data — Athena can query this directly through Iceberg. The YAML is what Claude inferred from the column structure: canonical-field mappings, PII tiers, cleansing rules per column. **This is what cuts new-partner onboarding from five days of data engineering to one hour of human review.**"*
+
+### Step 3 — open the schema YAML
+
+Click the `.schema.yaml` file → **Open** (or the **Object actions → Query with S3 Select** if Open isn't enabled).
+
+**🎙 Say (point at sections of the YAML):**
+> *"Top of the file: Claude tagged this as `csv` format, suggested `EligStartDate` as the partition column, and rated overall data quality as MEDIUM. Then row by row — for the SSN column it recommended Skyflow tokenization and storing only last-four. For DOB it recommended ISO-8601 coercion. For city it tagged TIER_2_QUASI — quasi-identifier. **That's the kind of judgment that's hard to encode as a rule but easy for an LLM that's seen healthcare schemas at scale.** The data engineer reviews this YAML, fills in the `REPLACE_ME` fields, and checks it into git as the official contract for this partner."*
+
+### Step 4 — verify a person who only exists in that CSV
 
 ```bash
 curl -sX POST $API/v1/verify \
@@ -317,7 +347,7 @@ curl -sX POST $API/v1/verify \
 **Expected:** `"status": "VERIFIED"` for Jin Park.
 
 **🎙 Say:**
-> *"Jin Park was a row in the CSV thirty seconds ago. He wasn't in the seeded golden records — he came in entirely through the file flow. End-to-end: file lands in S3, ingested by Lambda, becomes verifiable. That's the contract every partner integration follows — drop a file, the records are live."*
+> *"Jin Park was a row in the CSV thirty seconds ago — not in the seeded golden records, came in entirely through the file flow. End-to-end: file lands → records ingested → schema inferred by Claude → records verifiable through the API. That's the contract every partner integration follows. Drop a file, get a working partner."*
 
 ---
 
