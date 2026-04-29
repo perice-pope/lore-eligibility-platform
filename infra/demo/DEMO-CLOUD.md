@@ -116,46 +116,102 @@ curl -s $API/readyz | python3 -m json.tool
 **🖥 Show on screen:** terminal.
 
 **🎙 Say first:**
-> *"Three real verification calls. Watch the response shape — it's the same contract a partner mobile app would consume."*
+> *"Three verify calls. Each one tests a different real-world scenario a partner app has to handle. I'll set up what each one is *proving* before I run it, so you can see the result land."*
 
-### 2a — VERIFIED via nickname normalization
+**Reference card — the five seeded golden records sitting in DynamoDB right now:**
 
+| ID | Name | DOB | ZIP | SSN-last-4 | Coverage status |
+|---|---|---|---|---|---|
+| G-0001 | Robert Smith | 1962-04-12 | 90210 | 6789 | active |
+| G-0002 | Maria Garcia-Lopez | 1985-09-30 | 78701 | 4321 | active |
+| G-0003 | Lin Chen | 1990-01-15 | 10001 | 1122 | active |
+| G-0004 | Marcus Williams | 1980-06-14 | 30303 | 8899 | active |
+| G-0005 | Ethan O'Brien | 1955-07-18 | 29401 | 3344 | **ENDED 2024-06-30** |
+
+**Important detail:** the verify endpoint matches identity on **(DOB + ZIP + last name + SSN-last-4)** — *not* first name. First name varies too much (nicknames, typos, "Bob" vs "Robert"); the other four are the high-signal anchors.
+
+---
+
+### 2a — VERIFIED *(proves: nickname-tolerant matching)*
+
+**Sending:**
+```json
+{ "first_name": "Bob", "last_name": "Smith",
+  "dob": "1962-04-12", "zip": "90210", "ssn_last4": "6789" }
+```
+
+**What this proves:** a user typed their nickname (or had a typo on first name) and still verified. Identity isn't anchored on first name — it's anchored on the four high-signal fields. This is the everyday happy path: 90%+ of real verifications resolve here.
+
+**Why we expect VERIFIED:** the four anchor fields exactly match **G-0001 (Robert Smith)**, and his coverage is active. The Lambda returns VERIFIED with score 1.0.
+
+**Run:**
 ```bash
 curl -sX POST $API/v1/verify \
   -H 'content-type: application/json' \
   -d @../../samples/verify_nickname.json | python3 -m json.tool
 ```
 
-**Expected:** `"status": "VERIFIED"`, `"golden_record_id": "G-0001"`, `"score": 1.0`, `"detail": {"stage": "deterministic"}`.
+**Look for:** `"status": "VERIFIED"`, `"golden_record_id": "G-0001"`, `"score": 1.0`, `"detail": {"stage": "deterministic"}`.
 
-**🎙 Say:**
-> *"This member typed 'Bob' for first name. The deterministic match on DOB plus ZIP plus SSN-last-four succeeded against the canonical record for Robert. Sub-100ms, served from DynamoDB. Notice the response carries no PII back to the caller — just status and a correlation ID for support traceability."*
+**🎙 Say after the response:**
+> *"User typed 'Bob' for first name — we matched him against Robert. The four anchor fields lined up against G-0001 in DynamoDB, his coverage is active, so we return VERIFIED. Notice the response carries no PII back — just status, score, and a correlation ID a support agent can search by."*
 
-### 2b — INELIGIBLE
+---
 
+### 2b — INELIGIBLE *(proves: 'we know you' is a separate check from 'you're covered')*
+
+**Sending:**
+```json
+{ "first_name": "Ethan", "last_name": "O'Brien",
+  "dob": "1955-07-18", "zip": "29401", "ssn_last4": "3344" }
+```
+
+**What this proves:** finding someone in the member directory is *not* the same as confirming they're currently covered. The API has to surface the difference because the partner mobile app needs different copy for the two cases:
+- *"we don't know you"* → review your inputs / contact support
+- *"we know you, but coverage ended"* → contact your HR / re-enroll
+
+If the API collapsed these into one status, the partner UX gets clumsy.
+
+**Why we expect INELIGIBLE — the actual mechanic:** the four anchor fields match **G-0005 (Ethan O'Brien)** exactly, so identity is confirmed. *But* Ethan's golden record has `"effective_end_date": "2024-06-30"`. Today is 2026-04-29 — the end date is ~22 months in the past. The Lambda runs an `is_ineligible` check: *"is the end-date earlier than today?"* It is, so the response flips from VERIFIED to **INELIGIBLE**, with the reason explicitly named.
+
+**Run:**
 ```bash
 curl -sX POST $API/v1/verify \
   -H 'content-type: application/json' \
   -d @../../samples/verify_ineligible.json | python3 -m json.tool
 ```
 
-**Expected:** `"status": "INELIGIBLE"` with a coverage-end-date reason.
+**Look for:** `"status": "INELIGIBLE"`, `"golden_record_id": "G-0005"`, `"decision_basis"` mentioning the past end date.
 
-**🎙 Say:**
-> *"Found in our system, distinct from NOT_FOUND. The mobile app surfaces 'we found your account but eligibility ended — contact your HR.' Not a hard failure — a directed handoff."*
+**🎙 Say after the response:**
+> *"We found Ethan — he's in the directory. But his coverage-end-date is summer of 2024, almost two years ago. So instead of VERIFIED, we return INELIGIBLE with the reason explicitly named. In a partner app this is what the user actually sees: 'we found your account, but eligibility ended on June 30th, 2024 — contact your HR.' That's a directed handoff, not a dead end. This distinction is what makes the API genuinely useful for a partner's support team."*
 
-### 2c — NOT_FOUND
+---
 
+### 2c — NOT_FOUND *(proves: graceful no-match for non-members)*
+
+**Sending:**
+```json
+{ "first_name": "Walter", "last_name": "White",
+  "dob": "1959-09-07", "zip": "87104" }
+```
+*(Yes — Albuquerque ZIP, fictional schoolteacher. The audience may catch the joke.)*
+
+**What this proves:** when somebody isn't a member at all, the API returns a different status from INELIGIBLE so the partner UI can show the right message — *"we couldn't find you, please double-check your inputs or contact support"* — rather than implying their coverage was once active.
+
+**Why we expect NOT_FOUND:** no golden record has Walter's name + DOB + ZIP combination. Stage 1 (deterministic) returns zero matches. Stage 2 (fuzzy fallback on year-of-DOB + first 3 digits of ZIP + last name) also returns zero. The Lambda falls through to **NOT_FOUND**.
+
+**Run:**
 ```bash
 curl -sX POST $API/v1/verify \
   -H 'content-type: application/json' \
   -d @../../samples/verify_not_found.json | python3 -m json.tool
 ```
 
-**Expected:** `"status": "NOT_FOUND"`.
+**Look for:** `"status": "NOT_FOUND"`, `"score": 0.0`, `"golden_record_id": null`.
 
-**🎙 Say:**
-> *"And the no-match path. Same response shape, different status — the partner UI handles all four cases through one switch statement."*
+**🎙 Say after the response:**
+> *"No-match path. Walter White isn't in our member directory — the system says so plainly. Same response shape as the previous two calls — VERIFIED, INELIGIBLE, AMBIGUOUS, NEEDS_REVIEW, NOT_FOUND all flow through one switch statement on the partner side. No special-casing per status."*
 
 ---
 
