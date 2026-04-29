@@ -66,21 +66,43 @@ Also have the terminal pre-positioned with the `cd` and `export` lines above alr
 
 ## Beat 1 — Architecture tour + prove it's live (90 sec)
 
-**🖥 Show on screen:** terminal. Optionally have the API Gateway console tab open in the background — you can flick to it briefly when you mention API Gateway.
+**🖥 Show on screen:** terminal. Optionally keep the architecture diagram open in the background — point at each piece as you cover it.
 
 **🎙 Say (opening):**
-> *"Everything you're about to see runs on real AWS infrastructure I deployed about fifteen minutes ago — three minutes from `git clone` to live URL. Four services do the work. Quick tour before I prove it's live."*
+> *"Everything you're about to see runs on real AWS — three minutes from `git clone` to live URL. Four pieces do all the work. Quick plain-English tour before I prove it's live."*
 
-**🎙 Say (services walk-through — point at the architecture diagram if you have one open):**
+### API Gateway — *the public front door*
+- The HTTPS URL a partner mobile app calls
+- Handles encryption, CORS, and routing — no servers for us to operate
+- Every request lands here first and gets forwarded to the IDV Lambda
 
-> *"**API Gateway HTTP API** is the public front door. It terminates TLS, enforces CORS, and routes every request to the IDV Lambda — no EC2, no load balancer to operate. The URL you'll see in a moment is the live endpoint a partner mobile app would call."*
+### The IDV Lambda — *the brain*
+- Takes a verification request: *"is the person with this name, DOB, ZIP, and last-4-of-SSN one of our members?"*
+- Builds a **fingerprint** out of ZIP + DOB + last name — the same fields a partner UI collects
+- Looks for that fingerprint in DynamoDB
+- Returns one of **five answers**:
+  - **VERIFIED** — exactly one match, coverage active today
+  - **INELIGIBLE** — match exists but coverage ended (we still found you, just not eligible)
+  - **AMBIGUOUS** — multiple records match → step-up authentication needed
+  - **NEEDS_REVIEW** — only a fuzzy near-match → human review or knowledge-based questions
+  - **NOT_FOUND** — no record matches
+- Cold start under 1 second; warm calls under 100 ms
+- **No Claude call on this hot path** — every verify decision is a fast database lookup. Claude shows up in **Beat 4** doing the harder job of understanding a brand-new partner CSV.
 
-> *"**The IDV Lambda** behind API Gateway is the brain of the verification flow. It's a FastAPI app — the same Pydantic models and the same business logic as the local prototype I showed earlier — wrapped with Mangum so it runs on Lambda. When a request comes in, the Lambda validates the input, builds a deterministic lookup key (ZIP plus DOB plus last name, normalized and hashed), queries DynamoDB by that key, and returns one of four statuses: VERIFIED, INELIGIBLE, NOT_FOUND, or NEEDS_REVIEW. Cold start under a second; warm calls under a hundred milliseconds. Three-stage matcher under the hood — deterministic, then embedding similarity, then an LLM tiebreaker for genuinely ambiguous cases — but ninety-plus percent of real traffic resolves at stage one."*
+### DynamoDB — *the directory of who's who*
+- Holds **five "golden records"** — our canonical members. Specifically: Robert Smith, Maria Garcia-Lopez, Lin Chen, Marcus Williams, Ethan O'Brien.
+- **How they got there:** seeded at deploy time from `samples/golden_records_seed.json` — the same JSON file the local prototype reads. That's intentional: cloud and local stay byte-for-byte in sync so I can develop on a plane.
+- **Why a "secondary index"** matters here: each record has a unique ID like `G-0001`, but **no partner ever calls verify with `G-0001`** — they only know the user's name, DOB, and ZIP. So we built a **second way in** to the same data:
+  - Primary key: `golden_record_id` (a unique UUID)
+  - Secondary index: the fingerprint `zip#dob#lastname-lowercase`
+  - Think of a phone book sorted by phone number with a second copy sorted by last name — same data, two access patterns. Both are sub-100 ms.
 
-> *"**DynamoDB** holds the golden records — the canonical identity rows we match against. Five seeded at deploy time; we'll grow it to fifteen during Beat 5 when a partner file flows in. The `lookup_key` column is a Global Secondary Index — that's the index the Lambda hits for sub-hundred-millisecond exact-match reads."*
+### Two S3 buckets — *the partner-file pipeline*
+- **`raw`** bucket = where partners drop employee files (CSVs, JSON, EDI). It has a **7-day auto-delete** so we never sit on PII.
+- **`bronze`** bucket = where parsed, contract-conformant records land for analytics queries.
+- **Beat 5 will drop a real test file** — `samples/partner_acme_employer.csv`, 10 fake Acme employees including Maria from our golden records — into `raw/inbox/acme-corp/`. You'll watch it flow through both buckets and into DynamoDB.
 
-> *"**Two S3 buckets** — `raw` is the landing zone where partner files arrive, and `bronze` is where parsed, contract-conformant records get written for the analytics lake. The `raw` bucket has a seven-day lifecycle so we never accumulate PII; the `bronze` bucket is what Athena queries for partner-level eligibility analytics. Beat 5 will show a CSV flowing through both."*
-
+**🎙 Say:**
 > *"OK — let's prove it's actually live."*
 
 **Run:**
