@@ -332,8 +332,24 @@ Drill into `partner_id=acme-corp/dt=2026-04-29/`. You should see **two files** f
 
 Click the `.schema.yaml` file → **Open** (or the **Object actions → Query with S3 Select** if Open isn't enabled).
 
+> 💡 The exact rules Claude returns vary slightly run-to-run (Haiku will phrase cleansing rules differently each time). The narration below points at things that are **always** in the output: the file-level fields, the PII tier classification, and the `reasoning` text per column. Open `samples/partner_acme_employer.schema.yaml` ahead of time to see a real example.
+
 **🎙 Say (point at sections of the YAML):**
-> *"Top of the file: Claude tagged this as `csv` format, suggested `EligStartDate` as the partition column, and rated overall data quality as MEDIUM. Then row by row — for the SSN column it recommended Skyflow tokenization and storing only last-four. For DOB it recommended ISO-8601 coercion. For city it tagged TIER_2_QUASI — quasi-identifier. **That's the kind of judgment that's hard to encode as a rule but easy for an LLM that's seen healthcare schemas at scale.** The data engineer reviews this YAML, fills in the `REPLACE_ME` fields, and checks it into git as the official contract for this partner."*
+
+*Top of the file:*
+> *"Claude detected this as `csv` format, suggested `EligStartDate` as the partition column for analytics queries, and rated overall data quality risk as MEDIUM."*
+
+*Scroll down to the `SSN` column:*
+> *"For SSN — the most sensitive column — Claude tagged it `TIER_1_DIRECT`, the highest PII tier, with cleansing rules to mask for logging, validate the 9-digit format, and strip hyphens before storage. In our production architecture we'd then layer Skyflow tokenization on top of these rules — the AI got us most of the way there."*
+
+*Then the `DOB` column:*
+> *"DOB also `TIER_1_DIRECT`. Confidence 0.99. Look at the `reasoning` field — Claude's own words: 'direct identifier when combined with name; requires vault protection.' That reasoning gets persisted with every record so an auditor can trace why a given column got the classification it did."*
+
+*Scroll down to `PostalCode` (ZIP):*
+> *"And here's the one I love. ZIP got tagged `TIER_2_QUASI` — quasi-identifier. Read the reasoning: 'combined with DOB and gender enables re-identification per HIPAA guidance.' **Claude is citing HIPAA's actual re-identification rule.** That's the kind of judgment that's hard to encode as a rule but easy for an LLM that's seen healthcare schemas at scale."*
+
+*Wrap:*
+> *"The data engineer reviews this YAML, fills in the `REPLACE_ME` fields at the top — partner_id, reviewer, date — and checks it into git as the official contract for this partner. From a five-day human task to a one-hour review of a draft Claude already wrote."*
 
 ### Step 4 — verify a person who only exists in that CSV
 
