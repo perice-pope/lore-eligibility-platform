@@ -243,7 +243,7 @@ PROC_ENV=$(printf '{"Variables":{"LORE_IDV_DDB_TABLE":"%s","BRONZE_BUCKET":"%s",
 # Schema inference: prefer the user's local Anthropic API key if set (Bedrock daily quota
 # on this account is 0/day, so direct Anthropic API is the working path for live demos).
 ANTHROPIC_KEY="${ANTHROPIC_API_KEY:-}"
-ANTHROPIC_MODEL_ID="${LORE_ANTHROPIC_MODEL:-claude-sonnet-4-6}"
+ANTHROPIC_MODEL_ID="${LORE_ANTHROPIC_MODEL:-claude-haiku-4-5}"
 if [ -n "${ANTHROPIC_KEY}" ]; then
   yellow "  using Anthropic API for schema_inference (model=${ANTHROPIC_MODEL_ID})"
   SCHEMA_ENV=$(BEDROCK_MODEL="${BEDROCK_MODEL}" ANTHROPIC_MODEL_ID="${ANTHROPIC_MODEL_ID}" ANTHROPIC_KEY="${ANTHROPIC_KEY}" python3 -c '
@@ -259,9 +259,12 @@ else
   SCHEMA_ENV=$(printf '{"Variables":{"LORE_BEDROCK_MODEL":"%s"}}' "${BEDROCK_MODEL}")
 fi
 
-create_or_update_lambda "${PROJECT}-idv-api"          "lambdas/idv_api/idv_api.zip"                   15 512 "${IDV_ENV}"
-create_or_update_lambda "${PROJECT}-file-processor"   "lambdas/file_processor/file_processor.zip"     60 512 "${PROC_ENV}"
-create_or_update_lambda "${PROJECT}-schema-inference" "lambdas/schema_inference/schema_inference.zip" 30 512 "${SCHEMA_ENV}"
+create_or_update_lambda "${PROJECT}-idv-api"          "lambdas/idv_api/idv_api.zip"                    15 512 "${IDV_ENV}"
+# file_processor invokes schema_inference synchronously, so its timeout has to
+# cover the LLM round-trip. schema_inference itself gives the urllib request
+# 60s before bailing.
+create_or_update_lambda "${PROJECT}-file-processor"   "lambdas/file_processor/file_processor.zip"     120 512 "${PROC_ENV}"
+create_or_update_lambda "${PROJECT}-schema-inference" "lambdas/schema_inference/schema_inference.zip"  90 512 "${SCHEMA_ENV}"
 
 IDV_ARN="$(aws lambda get-function --region "${REGION}" --function-name "${PROJECT}-idv-api" --query 'Configuration.FunctionArn' --output text)"
 PROC_ARN="$(aws lambda get-function --region "${REGION}" --function-name "${PROJECT}-file-processor" --query 'Configuration.FunctionArn' --output text)"
