@@ -64,12 +64,24 @@ Also have the terminal pre-positioned with the `cd` and `export` lines above alr
 
 ---
 
-## Beat 1 — Show the live HTTPS URL (60 sec)
+## Beat 1 — Architecture tour + prove it's live (90 sec)
 
-**🖥 Show on screen:** terminal.
+**🖥 Show on screen:** terminal. Optionally have the API Gateway console tab open in the background — you can flick to it briefly when you mention API Gateway.
 
-**🎙 Say:**
-> *"Everything you're about to see runs on real AWS infrastructure I deployed about fifteen minutes ago. API Gateway and Lambda for the verification API. DynamoDB for the golden record store. S3 buckets for partner files. Three minutes from `git clone` to live URL."*
+**🎙 Say (opening):**
+> *"Everything you're about to see runs on real AWS infrastructure I deployed about fifteen minutes ago — three minutes from `git clone` to live URL. Four services do the work. Quick tour before I prove it's live."*
+
+**🎙 Say (services walk-through — point at the architecture diagram if you have one open):**
+
+> *"**API Gateway HTTP API** is the public front door. It terminates TLS, enforces CORS, and routes every request to the IDV Lambda — no EC2, no load balancer to operate. The URL you'll see in a moment is the live endpoint a partner mobile app would call."*
+
+> *"**The IDV Lambda** behind API Gateway is the brain of the verification flow. It's a FastAPI app — the same Pydantic models and the same business logic as the local prototype I showed earlier — wrapped with Mangum so it runs on Lambda. When a request comes in, the Lambda validates the input, builds a deterministic lookup key (ZIP plus DOB plus last name, normalized and hashed), queries DynamoDB by that key, and returns one of four statuses: VERIFIED, INELIGIBLE, NOT_FOUND, or NEEDS_REVIEW. Cold start under a second; warm calls under a hundred milliseconds. Three-stage matcher under the hood — deterministic, then embedding similarity, then an LLM tiebreaker for genuinely ambiguous cases — but ninety-plus percent of real traffic resolves at stage one."*
+
+> *"**DynamoDB** holds the golden records — the canonical identity rows we match against. Five seeded at deploy time; we'll grow it to fifteen during Beat 5 when a partner file flows in. The `lookup_key` column is a Global Secondary Index — that's the index the Lambda hits for sub-hundred-millisecond exact-match reads."*
+
+> *"**Two S3 buckets** — `raw` is the landing zone where partner files arrive, and `bronze` is where parsed, contract-conformant records get written for the analytics lake. The `raw` bucket has a seven-day lifecycle so we never accumulate PII; the `bronze` bucket is what Athena queries for partner-level eligibility analytics. Beat 5 will show a CSV flowing through both."*
+
+> *"OK — let's prove it's actually live."*
 
 **Run:**
 
