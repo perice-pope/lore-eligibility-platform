@@ -1,16 +1,12 @@
 """Schema inference engine.
 
-Two execution modes:
+Three execution modes, all returning the same `SchemaInferenceResult` contract:
 
-1. **Bedrock mode** (production): calls Claude on Amazon Bedrock with a structured prompt.
-   Requires AWS credentials with `bedrock:InvokeModel` permission for the configured model id.
+1. **Bedrock mode**: Claude via Amazon Bedrock. Needs `bedrock:InvokeModel` on the model id.
+2. **Anthropic mode**: Claude via api.anthropic.com directly. Needs `ANTHROPIC_API_KEY`.
+3. **Local mock mode**: deterministic heuristic classifier — same output shape, no network.
 
-2. **Local mock mode** (offline / tests / demo on a plane): a deterministic heuristic
-   classifier that mimics the Bedrock output schema. Picked automatically when the
-   `LORE_SCHEMA_INFERENCE_MODE` env var is `local` or AWS credentials are unavailable.
-
-The two modes share an identical output contract (`SchemaInferenceResult`) so the
-downstream pipeline does not care which one ran.
+`auto` (default) tries bedrock → anthropic → local in order, falling back on any failure.
 """
 
 from __future__ import annotations
@@ -38,6 +34,7 @@ log = logging.getLogger(__name__)
 # Claude 4.x family on Bedrock — direct on-demand model IDs are no longer accepted
 # for these models). The profile auto-routes to the nearest region with capacity.
 DEFAULT_BEDROCK_MODEL = "us.anthropic.claude-sonnet-4-6"
+DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 DEFAULT_REGION = "us-east-1"
 
 
@@ -131,12 +128,22 @@ def infer_schema(
     if chosen_mode == "bedrock":
         return _infer_bedrock(filename, sample_rows, chosen_model, chosen_region)
 
-    # auto mode: try bedrock, fall back to local
+    if chosen_mode == "anthropic":
+        anthro_model = os.environ.get("LORE_ANTHROPIC_MODEL", DEFAULT_ANTHROPIC_MODEL)
+        return _infer_anthropic(filename, sample_rows, anthro_model)
+
+    # auto mode: try bedrock → anthropic → local
     try:
         return _infer_bedrock(filename, sample_rows, chosen_model, chosen_region)
     except Exception as exc:
-        log.warning("Bedrock inference failed (%s), falling back to local mock", exc)
-        return _infer_local(filename, sample_rows, chosen_model)
+        log.warning("Bedrock inference failed (%s), trying Anthropic API", exc)
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        try:
+            anthro_model = os.environ.get("LORE_ANTHROPIC_MODEL", DEFAULT_ANTHROPIC_MODEL)
+            return _infer_anthropic(filename, sample_rows, anthro_model)
+        except Exception as exc:
+            log.warning("Anthropic API inference failed (%s), falling back to local mock", exc)
+    return _infer_local(filename, sample_rows, chosen_model)
 
 
 def _infer_bedrock(
@@ -172,6 +179,49 @@ def _infer_bedrock(
     text = payload["content"][0]["text"]
     parsed = _extract_json(text)
     return _result_from_dict(filename, parsed, model_id, mode="bedrock")
+
+
+def _infer_anthropic(
+    filename: str,
+    sample_rows: list[dict[str, Any]],
+    model_id: str,
+) -> SchemaInferenceResult:
+    """Call Claude via the Anthropic API directly. Same prompt + parsing as Bedrock path."""
+    import urllib.request
+    import urllib.error
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY is not set")
+
+    user_prompt = build_user_prompt(filename, sample_rows[:50], CANONICAL_FIELDS, PII_TIERS)
+    body = {
+        "model": model_id,
+        "max_tokens": 4000,
+        "system": SYSTEM_PROMPT,
+        "messages": [{"role": "user", "content": user_prompt}],
+        "temperature": 0.0,
+    }
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            payload = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Anthropic API HTTP {e.code}: {detail[:300]}") from e
+
+    text = payload["content"][0]["text"]
+    parsed = _extract_json(text)
+    return _result_from_dict(filename, parsed, model_id, mode="anthropic")
 
 
 def _result_from_dict(
