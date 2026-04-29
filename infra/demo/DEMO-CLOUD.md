@@ -118,17 +118,33 @@ curl -s $API/readyz | python3 -m json.tool
 **🎙 Say first:**
 > *"Three verify calls. Each one tests a different real-world scenario a partner app has to handle. I'll set up what each one is *proving* before I run it, so you can see the result land."*
 
-**Reference card — the five seeded golden records sitting in DynamoDB right now:**
+**Reference card — the five seeded golden records sitting in DynamoDB right now (real field names):**
 
-| ID | Name | DOB | ZIP | SSN-last-4 | Coverage status |
+| `golden_record_id` | `last_name` | `dob` | `zip` | `ssn_last4` | `effective_end_date` |
 |---|---|---|---|---|---|
-| G-0001 | Robert Smith | 1962-04-12 | 90210 | 6789 | active |
-| G-0002 | Maria Garcia-Lopez | 1985-09-30 | 78701 | 4321 | active |
-| G-0003 | Lin Chen | 1990-01-15 | 10001 | 1122 | active |
-| G-0004 | Marcus Williams | 1980-06-14 | 30303 | 8899 | active |
-| G-0005 | Ethan O'Brien | 1955-07-18 | 29401 | 3344 | **ENDED 2024-06-30** |
+| G-0001 | Smith | 1962-04-12 | 90210 | 6789 | *(null — coverage active)* |
+| G-0002 | Garcia-Lopez | 1985-09-30 | 78701 | 4321 | *(null — coverage active)* |
+| G-0003 | Chen | 1990-01-15 | 10001 | 1122 | *(null — coverage active)* |
+| G-0004 | Williams | 1980-06-14 | 30303 | 8899 | *(null — coverage active)* |
+| G-0005 | O'Brien | 1955-07-18 | 29401 | 3344 | **2024-06-30** *(past → INELIGIBLE)* |
+
+A null `effective_end_date` means "coverage is open-ended / still active." A past date means coverage has ended — which is exactly what drives the INELIGIBLE branch you'll see in 2b.
 
 **Important detail:** the verify endpoint matches identity on **(DOB + ZIP + last name + SSN-last-4)** — *not* first name. First name varies too much (nicknames, typos, "Bob" vs "Robert"); the other four are the high-signal anchors.
+
+**Response shape — what every verify call returns and where each field comes from:**
+
+| Field | Where it comes from | Used for |
+|---|---|---|
+| `status` | Computed by the Lambda based on lookup result + coverage check | The primary value the partner UI switches on (VERIFIED / INELIGIBLE / AMBIGUOUS / NEEDS_REVIEW / NOT_FOUND) |
+| `correlation_id` | A fresh UUID4 the Lambda mints per-request, before business logic runs | Support traceability — caller reads this to a rep, rep finds the exact request in CloudWatch |
+| `golden_record_id` | **Read directly from the matched DynamoDB row** (e.g. `G-0001`) | Tells the caller which canonical identity matched; useful for cross-referencing |
+| `partner_id` | **Read directly from the matched DynamoDB row** (e.g. `acme-corp`) | Indicates which carrier/employer this member is associated with |
+| `score` | Lambda-computed per branch: `1.0` exact match, `0.7` fuzzy, `0.5` ambiguous, `0.0` not-found | Confidence level — partner UI can show different copy at different score ranges |
+| `decision_basis` | Hard-coded human-readable string per branch in the Lambda | Audit trail — what a support rep or compliance auditor reads to understand a decision |
+| `detail.stage` | Which matcher branch resolved the request: `deterministic` / `fuzzy` / `not_found` | Observability — drives "% of traffic resolved at stage 1" dashboards |
+
+So the answer to *"where do `partner_id` and `golden_record_id` come from?"* — they're literally fields on the row in DynamoDB you'll see in Beat 3. The other fields are minted or computed by the Lambda for this specific request.
 
 ---
 
@@ -217,17 +233,35 @@ curl -sX POST $API/v1/verify \
 
 ## Beat 3 — Show the data in DynamoDB (60 sec)
 
-**🖥 Show on screen:** DynamoDB items tab.
+**🖥 Show on screen:** DynamoDB items tab — should already show the 5 seeded records as rows.
 
 If the page lost session, re-open: https://us-east-1.console.aws.amazon.com/dynamodbv2/home?region=us-east-1#item-explorer?table=lore-elig-demo-golden-records
 
-**🎙 Say:**
-> *"Behind that API: the actual table. Five seeded golden records — same JSON the local prototype uses, so the cloud and local versions are wire-compatible. The `lookup_key` column is a global secondary index — that's how we hit sub-100ms exact-match: ZIP plus DOB plus last name lowercased, hashed."*
+**🎙 Say (opening — tie back to Beat 2):**
+> *"Those three verify calls just hit this table. This is the actual storage — five rows, one per member. Let me show you what one of them looks like."*
 
-Click into any record (e.g. `G-0001`) to expand fields. Highlight `lookup_key`.
+### Step 1 — open Robert's record (the VERIFIED one from 2a)
+
+Click the row where `golden_record_id = G-0001`. The right panel expands.
+
+**🎙 Point at and say:**
+- *"`golden_record_id: G-0001` — primary key, internal use only."*
+- *"`lookup_key: 90210#1962-04-12#smith` — that's the fingerprint we built. ZIP + DOB + last name lowercased, joined with `#` separators. **This is what the verify Lambda actually queried** to find Robert in sub-100ms."*
+- *"`ssn_last4: 6789`. Notice we don't store the full SSN. Last-four only — and in production the full value gets tokenized through Skyflow before it ever hits any of our databases."*
+
+### Step 2 — open Ethan's record (the INELIGIBLE one from 2b)
+
+Scroll back to the row list, click `G-0005`.
+
+**🎙 Point at and say:**
+- *"`effective_end_date: 2024-06-30`. **This is the field that drove the INELIGIBLE response a minute ago.** The Lambda found Ethan by his fingerprint, then ran one more check — is this date in the past? It is — so the response flipped from VERIFIED to INELIGIBLE."*
+
+### Step 3 — explain the secondary index
 
 **🎙 Say:**
-> *"In production this is Aurora behind a Skyflow vault — same access pattern, different storage. DynamoDB is the demo analog because the access pattern is single-key reads."*
+> *"DynamoDB has two ways into this table. The primary key is `golden_record_id` — a UUID. But no partner ever calls verify with `G-0001` — they only know the user's name, DOB, ZIP, last-4-of-SSN. So we built a **secondary index** on `lookup_key`. Same data, second access pattern. Both are sub-100ms reads."*
+
+> *"In production this would be Aurora Postgres behind a Skyflow vault — same access pattern, different storage. DynamoDB is the demo analog because the access pattern is single-key reads against a denormalized table — exactly what DynamoDB is best at."*
 
 ---
 
