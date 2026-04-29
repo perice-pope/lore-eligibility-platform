@@ -679,24 +679,125 @@
       <p class="by">Perice Pope</p>
     </section>
 
-    <!-- ========================= 2. AGENDA ========================= -->
+    <!-- ========================= 18. LIVE DEMO ========================= -->
+    <section data-background-color="#0c2229">
+      <div style="text-align: center;">
+        <h1 style="color: var(--lore-green); font-size: 2.0em; margin: 0;">⏵ Live demo · "Onboarding a new partner"</h1>
+        <p style="color: var(--lore-soft); font-size: 0.95em; margin-top: 0.3em;">
+          ~7 minutes · live AWS · real Claude · file drop → verifiable employee in ≈ 1 minute
+        </p>
+      </div>
+
+      <div style="margin: 1em auto 0; max-width: 92%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6em;">
+        <div class="icon-card">
+          <div class="ic">📁</div>
+          <h4>1. CSV lands in S3</h4>
+          <p>Acme drops their employee file in <code>raw/inbox/acme-corp/</code>.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">⚡</div>
+          <h4>2. Pipeline kicks off</h4>
+          <p>S3 event → Lambda. 10 records into DynamoDB, file into bronze.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">🤖</div>
+          <h4>3. Claude drafts contract</h4>
+          <p>schema_inference Lambda calls Anthropic. Draft YAML lands beside the data.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">✅</div>
+          <h4>4. Employees verify</h4>
+          <p>Same IDV API a mobile app calls. Jin Park (CSV-only) → VERIFIED.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">🗄️</div>
+          <h4>5. Inspect DynamoDB</h4>
+          <p>15 records (5 + 10). <code>G-EEB5</code>'s <code>lookup_key</code> = the GSI fingerprint.</p>
+        </div>
+      </div>
+
+      <div class="footer-slide-num" style="color: var(--lore-soft);">02 / 13</div>
+    </section>
+
+    <!-- ========================= 7b. DEMO ARCHITECTURE (subset live in AWS) ========================= -->
     <section>
-      <h2>Agenda — 30 minutes</h2>
-      <table>
-        <thead><tr><th>#</th><th>Section</th><th>Time</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>Problems & design principles</td><td>5 min</td></tr>
-          <tr><td>2</td><td>Architecture — full + demo subset</td><td>5 min</td></tr>
-          <tr><td>3</td><td>The two AI features</td><td>3 min</td></tr>
-          <tr><td>4</td><td><strong>Live demo — onboarding a new partner</strong></td><td>7 min</td></tr>
-          <tr><td>5</td><td>PII guardrails, data contracts, SLOs</td><td>5 min</td></tr>
-          <tr><td>6</td><td>Wrap &amp; questions</td><td>5 min</td></tr>
-        </tbody>
-      </table>
-      <blockquote style="margin-top: 0.8em;">
-        Interrupt me anytime. I'd rather have a discussion than a monologue.
-      </blockquote>
-      <div class="footer-slide-num">02 / 14</div>
+      <h2>Demo architecture — what's actually live in AWS today</h2>
+      <p style="margin-top: 0; color: var(--lore-soft); font-size: 0.85em;">
+        A scoped subset of the full diagram. Same shapes, fewer pieces — what I deployed for this panel.
+      </p>
+
+      <div class="arch-canvas">
+        <!-- Lane 1: Partner -->
+        <div class="lane">
+          <div class="lane-title">Partner</div>
+          <div class="svc">
+            <span class="svc-emoji">📁</span>
+            <span class="svc-text">Acme CSV<small>10 employees</small></span>
+          </div>
+        </div>
+
+        <!-- Lane 2: Ingest -->
+        <div class="lane">
+          <div class="lane-title">Ingest</div>
+          <div class="svc">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/amazons3.svg" alt="" />
+            <span class="svc-text">S3 raw<small>inbox/&lt;partner&gt;/</small></span>
+          </div>
+          <div class="svc">
+            <span class="svc-emoji">⚡</span>
+            <span class="svc-text">S3 event<small>ObjectCreated</small></span>
+          </div>
+        </div>
+
+        <!-- Lane 3: Process -->
+        <div class="lane">
+          <div class="lane-title">Process</div>
+          <div class="svc">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/awslambda.svg" alt="" />
+            <span class="svc-text">file_processor λ<small>parse · upsert · invoke</small></span>
+          </div>
+          <div class="svc featured">
+            <span class="svc-emoji">🤖</span>
+            <span class="svc-text">schema_inference λ<small>→ Claude (Anthropic API)</small></span>
+          </div>
+        </div>
+
+        <!-- Lane 4: Store -->
+        <div class="lane">
+          <div class="lane-title">Store</div>
+          <div class="svc serve">
+            <span class="svc-emoji">🗄️</span>
+            <span class="svc-text">DynamoDB<small>golden records · GSI lookup_key</small></span>
+          </div>
+          <div class="svc">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/amazons3.svg" alt="" />
+            <span class="svc-text">S3 bronze<small>data + .schema.yaml sidecar</small></span>
+          </div>
+        </div>
+
+        <!-- Lane 5: Serve -->
+        <div class="lane">
+          <div class="lane-title">Serve</div>
+          <div class="svc serve">
+            <span class="svc-emoji">🌐</span>
+            <span class="svc-text">API Gateway HTTP<small>HTTPS · CORS</small></span>
+          </div>
+          <div class="svc serve">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/awslambda.svg" alt="" />
+            <span class="svc-text">IDV API λ<small>FastAPI · Mangum</small></span>
+          </div>
+          <div class="svc">
+            <span class="svc-emoji">📱</span>
+            <span class="svc-text">Mobile / partner UI<small>verify caller</small></span>
+          </div>
+        </div>
+      </div>
+
+      <p style="text-align: center; margin: 0.8em 0 0; color: var(--lore-soft); font-size: 0.85em;">
+        Cut from production: SFTP/CDC ingest paths, Skyflow vault, Snowflake gold, Aurora hot replica, EMR Spark cleansing. Same shape; production is wider.
+      </p>
+
+      <div class="footer-slide-num">08 / 27</div>
     </section>
 
     <!-- ========================= 5. THE 5 PROBLEMS ========================= -->
@@ -791,6 +892,184 @@
         </div>
       </div>
       <div class="footer-slide-num">06 / 27</div>
+    </section>
+
+    <!-- ========================= 16. AI #1 SCHEMA INFERENCE ========================= -->
+    <section>
+      <h2>AI feature #1 — Onboarding a new partner</h2>
+
+      <div class="hero-stat">
+        <div class="big">5 days &nbsp;→&nbsp; under an hour</div>
+        <div class="lbl">Engineer time to onboard a new partner</div>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pic">📄</div>
+          <h5>Sample rows</h5>
+          <p>50 lines from the new file</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step ai">
+          <div class="pic">🤖</div>
+          <h5>Claude reads it</h5>
+          <p>Maps every column · tags PII</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pic">📝</div>
+          <h5>Draft contract</h5>
+          <p>Auto-generated YAML</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step human">
+          <div class="pic">👤</div>
+          <h5>Engineer reviews</h5>
+          <p>Edit · approve · commit</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pic">🚀</div>
+          <h5>Live in pipeline</h5>
+          <p>Real partner data flows</p>
+        </div>
+      </div>
+
+      <p style="margin-top: 0.9em; text-align: center; color: var(--lore-soft);">
+        The AI <em>proposes</em>. A human <em>approves</em> before a single record flows through.
+      </p>
+      <div class="footer-slide-num">16 / 27</div>
+    </section>
+
+    <!-- ========================= 17. AI #2 ENTITY RESOLUTION ========================= -->
+    <section>
+      <h2>AI feature #2 — Entity resolution</h2>
+      <p><em>Are these two records the same person?</em></p>
+      <table style="margin-top: 0.5em;">
+        <thead><tr><th>Stage</th><th>Mechanism</th><th>Handles</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>1 · Deterministic</strong></td>
+            <td>Exact match on tokenized SSN, or DOB + soundex(name) + ZIP5</td>
+            <td>~70% — easy cases</td>
+          </tr>
+          <tr>
+            <td><strong>2 · Embedding retrieval</strong></td>
+            <td>Bedrock Titan embeddings → OpenSearch k-NN top-K</td>
+            <td>~25% — typos, "Bob vs Robert", address moves</td>
+          </tr>
+          <tr>
+            <td><strong>3 · LLM adjudication</strong></td>
+            <td>Claude scores each pair, returns JSON {decision, confidence, reasoning}</td>
+            <td>borderline + audit trail</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 0.6em;">
+        <strong>Confidence ≥ 0.95</strong> → auto-merge.
+        <strong>0.80–0.95</strong> → human review queue.
+        <strong>&lt; 0.80</strong> → new golden record.
+      </p>
+      <blockquote>Pure rules miss 15–30% of true matches. Pure ML fails a HIPAA audit. <strong>Hybrid wins on every axis: precision, recall, auditability.</strong></blockquote>
+      <div class="footer-slide-num">17 / 27</div>
+    </section>
+
+    <!-- ========================= 19. WHO SEES WHAT (masking) ========================= -->
+    <section>
+      <h2>Who sees what — at the database</h2>
+      <p>The same table, three different views — the database itself enforces it. Apps don't have to know.</p>
+
+      <div class="three-col" style="margin-top: 1em;">
+        <div class="col" style="background: rgba(106,169,255,0.06); border: 1px solid #2c4d7a; border-radius: 10px; padding: 1em;">
+          <h3 style="color: var(--lore-blue); margin: 0 0 0.5em;">Sign-up app</h3>
+          <p style="margin: 0; color: #fff;">Sees full DOB, ZIP, last-4 SSN.</p>
+          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">It needs them to verify identity.</p>
+        </div>
+        <div class="col" style="background: rgba(25,195,158,0.06); border: 1px solid #1f6a5a; border-radius: 10px; padding: 1em;">
+          <h3 style="color: var(--lore-green); margin: 0 0 0.5em;">Analyst / BI</h3>
+          <p style="margin: 0; color: #fff;">Sees DOB year only. SSN columns return null.</p>
+          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">Their dashboards still work — by year is plenty for cohort analysis.</p>
+        </div>
+        <div class="col" style="background: rgba(241,176,76,0.06); border: 1px solid #7a5b25; border-radius: 10px; padding: 1em;">
+          <h3 style="color: var(--lore-warn); margin: 0 0 0.5em;">Compliance</h3>
+          <p style="margin: 0; color: #fff;">Sees everything, every access logged.</p>
+          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">Audit trail with retention is HIPAA-compliant.</p>
+        </div>
+      </div>
+
+      <blockquote style="margin-top: 1em;">
+        Three lines of SQL. Zero application changes. <strong>The database is the security boundary, not the app.</strong>
+      </blockquote>
+
+      <div class="footer-slide-num">19 / 27</div>
+    </section>
+
+    <!-- ========================= 21. THE DATA CONTRACT ========================= -->
+    <section>
+      <h2>The data contract — a translator the team controls</h2>
+
+      <div class="translator" style="margin-top: 0.6em;">
+        <div class="translator-node">
+          <h4>Acme HR system</h4>
+          <small>Sends a CSV<br/>"EmployeeID, FirstName,&nbsp;DOB&nbsp;(MM/DD/YYYY)…"</small>
+        </div>
+        <div class="arrow">→</div>
+        <div class="translator-node contract">
+          <h4>Data contract</h4>
+          <small>One YAML file in git.<br/>Versioned. Reviewed. Signed off.</small>
+        </div>
+        <div class="arrow">→</div>
+        <div class="translator-node">
+          <h4>Our pipeline</h4>
+          <small>Sees one stable shape.<br/>"<code>partner_member_id</code>, <code>first_name</code>, <code>dob (ISO)</code>…"</small>
+        </div>
+      </div>
+
+      <p style="margin-top: 0.9em; font-size: 0.92em;">Each contract also declares <strong>PII tier per field</strong>, <strong>required completeness</strong>, <strong>cadence</strong>, <strong>retention</strong>, and <strong>auto-quarantine thresholds</strong>.</p>
+
+      <blockquote style="margin-top: 0.4em; font-size: 0.92em;">
+        Partner changes their format? Bump the contract version, regression-test, deploy. No silent breakage.
+      </blockquote>
+
+      <div class="footer-slide-num">09 / 13</div>
+    </section>
+
+    <!-- ========================= 22. P0 GUARDRAIL ========================= -->
+    <section>
+      <h2>The P0 guardrail — PII can never leak silently</h2>
+
+      <div class="alarm">
+        <div class="icon">🚨</div>
+        <div>
+          <h4>Severity: critical</h4>
+          <p><strong>If a raw SSN ever appears in a column meant to hold only a token,</strong> the build fails, promotion to production stops, and on-call gets paged within seconds.</p>
+        </div>
+      </div>
+
+      <div class="gate-flow">
+        <div class="gate-step">Bronze (raw landing)</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step">Cleansing job</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step success">Quality check ✓</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step">Silver (analytics-safe)</div>
+      </div>
+      <p style="text-align: center; margin: 0.6em 0 0; color: var(--lore-soft); font-size: 0.85em;">
+        Every promotion between layers passes through automated quality checks. If any check fails:
+      </p>
+      <div class="gate-flow" style="margin-top: 0.3em;">
+        <div class="gate-step">Cleansing job</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step fail">Quality check ✗</div>
+        <div class="gate-arrow">→</div>
+        <div class="gate-step">Build halts · on-call paged · partner alerted</div>
+      </div>
+
+      <blockquote style="margin-top: 0.9em;">
+        This is what <strong>"data contract enforced"</strong> actually means in practice — not a doc, a gate.
+      </blockquote>
+      <div class="footer-slide-num">22 / 27</div>
     </section>
 
     <!-- ========================= 7. ARCHITECTURE ========================= -->
@@ -897,314 +1176,6 @@
       </div>
 
       <div class="footer-slide-num">07 / 27</div>
-    </section>
-
-    <!-- ========================= 7b. DEMO ARCHITECTURE (subset live in AWS) ========================= -->
-    <section>
-      <h2>Demo architecture — what's actually live in AWS today</h2>
-      <p style="margin-top: 0; color: var(--lore-soft); font-size: 0.85em;">
-        A scoped subset of the full diagram. Same shapes, fewer pieces — what I deployed for this panel.
-      </p>
-
-      <div class="arch-canvas">
-        <!-- Lane 1: Partner -->
-        <div class="lane">
-          <div class="lane-title">Partner</div>
-          <div class="svc">
-            <span class="svc-emoji">📁</span>
-            <span class="svc-text">Acme CSV<small>10 employees</small></span>
-          </div>
-        </div>
-
-        <!-- Lane 2: Ingest -->
-        <div class="lane">
-          <div class="lane-title">Ingest</div>
-          <div class="svc">
-            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/amazons3.svg" alt="" />
-            <span class="svc-text">S3 raw<small>inbox/&lt;partner&gt;/</small></span>
-          </div>
-          <div class="svc">
-            <span class="svc-emoji">⚡</span>
-            <span class="svc-text">S3 event<small>ObjectCreated</small></span>
-          </div>
-        </div>
-
-        <!-- Lane 3: Process -->
-        <div class="lane">
-          <div class="lane-title">Process</div>
-          <div class="svc">
-            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/awslambda.svg" alt="" />
-            <span class="svc-text">file_processor λ<small>parse · upsert · invoke</small></span>
-          </div>
-          <div class="svc featured">
-            <span class="svc-emoji">🤖</span>
-            <span class="svc-text">schema_inference λ<small>→ Claude (Anthropic API)</small></span>
-          </div>
-        </div>
-
-        <!-- Lane 4: Store -->
-        <div class="lane">
-          <div class="lane-title">Store</div>
-          <div class="svc serve">
-            <span class="svc-emoji">🗄️</span>
-            <span class="svc-text">DynamoDB<small>golden records · GSI lookup_key</small></span>
-          </div>
-          <div class="svc">
-            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/amazons3.svg" alt="" />
-            <span class="svc-text">S3 bronze<small>data + .schema.yaml sidecar</small></span>
-          </div>
-        </div>
-
-        <!-- Lane 5: Serve -->
-        <div class="lane">
-          <div class="lane-title">Serve</div>
-          <div class="svc serve">
-            <span class="svc-emoji">🌐</span>
-            <span class="svc-text">API Gateway HTTP<small>HTTPS · CORS</small></span>
-          </div>
-          <div class="svc serve">
-            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/awslambda.svg" alt="" />
-            <span class="svc-text">IDV API λ<small>FastAPI · Mangum</small></span>
-          </div>
-          <div class="svc">
-            <span class="svc-emoji">📱</span>
-            <span class="svc-text">Mobile / partner UI<small>verify caller</small></span>
-          </div>
-        </div>
-      </div>
-
-      <p style="text-align: center; margin: 0.8em 0 0; color: var(--lore-soft); font-size: 0.85em;">
-        Cut from production: SFTP/CDC ingest paths, Skyflow vault, Snowflake gold, Aurora hot replica, EMR Spark cleansing. Same shape; production is wider.
-      </p>
-
-      <div class="footer-slide-num">08 / 27</div>
-    </section>
-
-    <!-- ========================= 16. AI #1 SCHEMA INFERENCE ========================= -->
-    <section>
-      <h2>AI feature #1 — Onboarding a new partner</h2>
-
-      <div class="hero-stat">
-        <div class="big">5 days &nbsp;→&nbsp; under an hour</div>
-        <div class="lbl">Engineer time to onboard a new partner</div>
-      </div>
-
-      <div class="pipeline">
-        <div class="pipe-step">
-          <div class="pic">📄</div>
-          <h5>Sample rows</h5>
-          <p>50 lines from the new file</p>
-        </div>
-        <div class="pipe-arrow">→</div>
-        <div class="pipe-step ai">
-          <div class="pic">🤖</div>
-          <h5>Claude reads it</h5>
-          <p>Maps every column · tags PII</p>
-        </div>
-        <div class="pipe-arrow">→</div>
-        <div class="pipe-step">
-          <div class="pic">📝</div>
-          <h5>Draft contract</h5>
-          <p>Auto-generated YAML</p>
-        </div>
-        <div class="pipe-arrow">→</div>
-        <div class="pipe-step human">
-          <div class="pic">👤</div>
-          <h5>Engineer reviews</h5>
-          <p>Edit · approve · commit</p>
-        </div>
-        <div class="pipe-arrow">→</div>
-        <div class="pipe-step">
-          <div class="pic">🚀</div>
-          <h5>Live in pipeline</h5>
-          <p>Real partner data flows</p>
-        </div>
-      </div>
-
-      <p style="margin-top: 0.9em; text-align: center; color: var(--lore-soft);">
-        The AI <em>proposes</em>. A human <em>approves</em> before a single record flows through.
-      </p>
-      <div class="footer-slide-num">16 / 27</div>
-    </section>
-
-    <!-- ========================= 17. AI #2 ENTITY RESOLUTION ========================= -->
-    <section>
-      <h2>AI feature #2 — Entity resolution</h2>
-      <p><em>Are these two records the same person?</em></p>
-      <table style="margin-top: 0.5em;">
-        <thead><tr><th>Stage</th><th>Mechanism</th><th>Handles</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong>1 · Deterministic</strong></td>
-            <td>Exact match on tokenized SSN, or DOB + soundex(name) + ZIP5</td>
-            <td>~70% — easy cases</td>
-          </tr>
-          <tr>
-            <td><strong>2 · Embedding retrieval</strong></td>
-            <td>Bedrock Titan embeddings → OpenSearch k-NN top-K</td>
-            <td>~25% — typos, "Bob vs Robert", address moves</td>
-          </tr>
-          <tr>
-            <td><strong>3 · LLM adjudication</strong></td>
-            <td>Claude scores each pair, returns JSON {decision, confidence, reasoning}</td>
-            <td>borderline + audit trail</td>
-          </tr>
-        </tbody>
-      </table>
-      <p style="margin-top: 0.6em;">
-        <strong>Confidence ≥ 0.95</strong> → auto-merge.
-        <strong>0.80–0.95</strong> → human review queue.
-        <strong>&lt; 0.80</strong> → new golden record.
-      </p>
-      <blockquote>Pure rules miss 15–30% of true matches. Pure ML fails a HIPAA audit. <strong>Hybrid wins on every axis: precision, recall, auditability.</strong></blockquote>
-      <div class="footer-slide-num">17 / 27</div>
-    </section>
-
-    <!-- ========================= 18. LIVE DEMO ========================= -->
-    <section data-background-color="#0c2229">
-      <div style="text-align: center;">
-        <h1 style="color: var(--lore-green); font-size: 2.6em; margin-bottom: 0.2em;">⏵ Live demo</h1>
-        <p style="color: var(--lore-soft); font-size: 1.1em; margin-top: 0.4em; font-style: italic;">
-          "Walk me through what happens when a new partner gets added."
-        </p>
-        <p style="color: var(--lore-soft); font-size: 0.95em; margin-top: 0.2em;">
-          ~7 minutes · real AWS · real Claude
-        </p>
-      </div>
-
-      <div style="margin: 1.2em auto 0; max-width: 90%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.7em;">
-        <div class="icon-card">
-          <div class="ic">📁</div>
-          <h4>1. CSV lands in S3</h4>
-          <p>Acme drops their first employee file in <code>raw/inbox/acme-corp/</code>.</p>
-        </div>
-        <div class="icon-card">
-          <div class="ic">⚡</div>
-          <h4>2. Pipeline kicks off</h4>
-          <p>S3 event → Lambda. 10 records into DynamoDB, file into bronze.</p>
-        </div>
-        <div class="icon-card">
-          <div class="ic">🤖</div>
-          <h4>3. Claude drafts the contract</h4>
-          <p>schema_inference Lambda calls Anthropic API. Draft YAML beside the data.</p>
-        </div>
-        <div class="icon-card">
-          <div class="ic">✅</div>
-          <h4>4. Acme employees verify</h4>
-          <p>Same IDV API a mobile app calls. Jin Park (CSV-only) → VERIFIED.</p>
-        </div>
-        <div class="icon-card">
-          <div class="ic">🗄️</div>
-          <h4>5. Inspect DynamoDB</h4>
-          <p>15 records (5 seeded + 10 ingested). G-EEB5's <code>lookup_key</code> = the GSI fingerprint.</p>
-        </div>
-        <div class="icon-card">
-          <div class="ic">⏱</div>
-          <h4>End to end ≈ 1 min</h4>
-          <p>From file drop to a verifiable employee. Same path, every partner, every file.</p>
-        </div>
-      </div>
-
-      <div class="footer-slide-num" style="color: var(--lore-soft);">18 / 27</div>
-    </section>
-
-    <!-- ========================= 19. WHO SEES WHAT (masking) ========================= -->
-    <section>
-      <h2>Who sees what — at the database</h2>
-      <p>The same table, three different views — the database itself enforces it. Apps don't have to know.</p>
-
-      <div class="three-col" style="margin-top: 1em;">
-        <div class="col" style="background: rgba(106,169,255,0.06); border: 1px solid #2c4d7a; border-radius: 10px; padding: 1em;">
-          <h3 style="color: var(--lore-blue); margin: 0 0 0.5em;">Sign-up app</h3>
-          <p style="margin: 0; color: #fff;">Sees full DOB, ZIP, last-4 SSN.</p>
-          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">It needs them to verify identity.</p>
-        </div>
-        <div class="col" style="background: rgba(25,195,158,0.06); border: 1px solid #1f6a5a; border-radius: 10px; padding: 1em;">
-          <h3 style="color: var(--lore-green); margin: 0 0 0.5em;">Analyst / BI</h3>
-          <p style="margin: 0; color: #fff;">Sees DOB year only. SSN columns return null.</p>
-          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">Their dashboards still work — by year is plenty for cohort analysis.</p>
-        </div>
-        <div class="col" style="background: rgba(241,176,76,0.06); border: 1px solid #7a5b25; border-radius: 10px; padding: 1em;">
-          <h3 style="color: var(--lore-warn); margin: 0 0 0.5em;">Compliance</h3>
-          <p style="margin: 0; color: #fff;">Sees everything, every access logged.</p>
-          <p style="margin: 0.4em 0 0; font-size: 0.85em; color: var(--lore-soft);">Audit trail with retention is HIPAA-compliant.</p>
-        </div>
-      </div>
-
-      <blockquote style="margin-top: 1em;">
-        Three lines of SQL. Zero application changes. <strong>The database is the security boundary, not the app.</strong>
-      </blockquote>
-
-      <div class="footer-slide-num">19 / 27</div>
-    </section>
-
-    <!-- ========================= 21. THE DATA CONTRACT ========================= -->
-    <section>
-      <h2>The data contract — a translator the team controls</h2>
-      <p>Partners send messy data. The contract turns chaos into one stable shape downstream tools depend on.</p>
-
-      <div class="translator">
-        <div class="translator-node">
-          <h4>Acme HR system</h4>
-          <small>Sends a CSV<br/>"EmployeeID, FirstName,&nbsp;DOB&nbsp;(MM/DD/YYYY)…"</small>
-        </div>
-        <div class="arrow">→</div>
-        <div class="translator-node contract">
-          <h4>Data contract</h4>
-          <small>One YAML file in git.<br/>Versioned. Reviewed. Signed off.</small>
-        </div>
-        <div class="arrow">→</div>
-        <div class="translator-node">
-          <h4>Our pipeline</h4>
-          <small>Sees one stable shape.<br/>"<code>partner_member_id</code>, <code>first_name</code>, <code>dob (ISO)</code>…"</small>
-        </div>
-      </div>
-
-      <p style="margin-top: 1em;">Each contract also declares: <strong>which fields are PII tier 1</strong>, <strong>required completeness</strong>, <strong>expected cadence</strong>, <strong>retention</strong>, <strong>auto-quarantine thresholds</strong>.</p>
-
-      <blockquote style="margin-top: 0.5em;">
-        Partner changes their format? <strong>Bump the contract version, regression-test, deploy.</strong> No silent breakage. No mystery.
-      </blockquote>
-
-      <div class="footer-slide-num">21 / 27</div>
-    </section>
-
-    <!-- ========================= 22. P0 GUARDRAIL ========================= -->
-    <section>
-      <h2>The P0 guardrail — PII can never leak silently</h2>
-
-      <div class="alarm">
-        <div class="icon">🚨</div>
-        <div>
-          <h4>Severity: critical</h4>
-          <p><strong>If a raw SSN ever appears in a column meant to hold only a token,</strong> the build fails, promotion to production stops, and on-call gets paged within seconds.</p>
-        </div>
-      </div>
-
-      <div class="gate-flow">
-        <div class="gate-step">Bronze (raw landing)</div>
-        <div class="gate-arrow">→</div>
-        <div class="gate-step">Cleansing job</div>
-        <div class="gate-arrow">→</div>
-        <div class="gate-step success">Quality check ✓</div>
-        <div class="gate-arrow">→</div>
-        <div class="gate-step">Silver (analytics-safe)</div>
-      </div>
-      <p style="text-align: center; margin: 0.6em 0 0; color: var(--lore-soft); font-size: 0.85em;">
-        Every promotion between layers passes through automated quality checks. If any check fails:
-      </p>
-      <div class="gate-flow" style="margin-top: 0.3em;">
-        <div class="gate-step">Cleansing job</div>
-        <div class="gate-arrow">→</div>
-        <div class="gate-step fail">Quality check ✗</div>
-        <div class="gate-arrow">→</div>
-        <div class="gate-step">Build halts · on-call paged · partner alerted</div>
-      </div>
-
-      <blockquote style="margin-top: 0.9em;">
-        This is what <strong>"data contract enforced"</strong> actually means in practice — not a doc, a gate.
-      </blockquote>
-      <div class="footer-slide-num">22 / 27</div>
     </section>
 
     <!-- ========================= 23. SLOs ========================= -->
