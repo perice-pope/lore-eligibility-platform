@@ -681,65 +681,22 @@
 
     <!-- ========================= 2. AGENDA ========================= -->
     <section>
-      <h2>Agenda — 45 minutes</h2>
+      <h2>Agenda — 30 minutes</h2>
       <table>
         <thead><tr><th>#</th><th>Section</th><th>Time</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Context: Lore + the chosen case study</td><td>5 min</td></tr>
-          <tr><td>2</td><td>Architecture principles & target state</td><td>7 min</td></tr>
-          <tr><td>3</td><td>Tech stack — AWS-first, with substitutions</td><td>6 min</td></tr>
-          <tr><td>4</td><td>The two AI features (Bedrock)</td><td>5 min</td></tr>
-          <tr><td>5</td><td><strong>Live demo</strong></td><td>10 min</td></tr>
-          <tr><td>6</td><td>Hands-on artifacts (DDL, dbt, contracts, SQL)</td><td>5 min</td></tr>
-          <tr><td>7</td><td>SLOs, migration plan, cost</td><td>3 min</td></tr>
-          <tr><td>8</td><td>Wrap & questions</td><td>4 min</td></tr>
+          <tr><td>1</td><td>Problems & design principles</td><td>5 min</td></tr>
+          <tr><td>2</td><td>Architecture — full + demo subset</td><td>5 min</td></tr>
+          <tr><td>3</td><td>The two AI features</td><td>3 min</td></tr>
+          <tr><td>4</td><td><strong>Live demo — onboarding a new partner</strong></td><td>7 min</td></tr>
+          <tr><td>5</td><td>PII guardrails, data contracts, SLOs</td><td>5 min</td></tr>
+          <tr><td>6</td><td>Wrap &amp; questions</td><td>5 min</td></tr>
         </tbody>
       </table>
       <blockquote style="margin-top: 0.8em;">
         Interrupt me anytime. I'd rather have a discussion than a monologue.
       </blockquote>
-      <div class="footer-slide-num">02 / 27</div>
-    </section>
-
-    <!-- ========================= 3. WHAT I LEARNED ========================= -->
-    <section>
-      <h2>What I learned about Lore</h2>
-      <div class="pillar-grid">
-        <div class="pillar">
-          <h4>HIPAA-regulated</h4>
-          <p>Medicare ACO context. Eligibility data is PHI from the moment it lands. Every architectural choice has to pass that filter.</p>
-        </div>
-        <div class="pillar">
-          <h4>Partner-driven</h4>
-          <p>Employers, brokers, payers, ACOs send members in via eligibility feeds. Broken feed = no member to enroll = no product.</p>
-        </div>
-        <div class="pillar">
-          <h4>AI-native culture</h4>
-          <p>Permission to use modern tools — Bedrock, embeddings — but only where they outperform classical approaches <em>and</em> the audit trail satisfies HIPAA.</p>
-        </div>
-      </div>
-      <p style="margin-top: 1em;">These three filters shaped <em>every</em> decision in the architecture.</p>
-      <div class="footer-slide-num">03 / 27</div>
-    </section>
-
-    <!-- ========================= 4. WHY CASE 3 ========================= -->
-    <section>
-      <h2>Why I picked Case Study #3</h2>
-      <div class="pillar-grid">
-        <div class="pillar">
-          <h4>Source of truth</h4>
-          <p>New account creation depends on this. Can't match a sign-up → member can't use Lore. Wrong match → data breach.</p>
-        </div>
-        <div class="pillar">
-          <h4>Quality + governance</h4>
-          <p>Most data work ducks one or the other. This case demands both done well at the same time.</p>
-        </div>
-        <div class="pillar">
-          <h4>Where AI earns its keep</h4>
-          <p>Schema inference and entity resolution are two of the highest-ROI uses of LLMs in data engineering today.</p>
-        </div>
-      </div>
-      <div class="footer-slide-num">04 / 27</div>
+      <div class="footer-slide-num">02 / 14</div>
     </section>
 
     <!-- ========================= 5. THE 5 PROBLEMS ========================= -->
@@ -942,208 +899,85 @@
       <div class="footer-slide-num">07 / 27</div>
     </section>
 
-    <!-- ========================= 8. FOUR DATA HOMES ========================= -->
+    <!-- ========================= 7b. DEMO ARCHITECTURE (subset live in AWS) ========================= -->
     <section>
-      <h2>The data flows through four homes</h2>
-      <p>Each tier has one job. Mixing them up is the most common mistake teams make.</p>
-
-      <div class="tier-stack">
-        <div class="tier">
-          <div class="tier-num">1</div>
-          <h3>Raw landing</h3>
-          <p>Exactly what the partner sent. Untouched.</p>
-          <p><em>"What did Acme send us last Tuesday?"</em></p>
-          <span class="tier-tech">S3 + KMS</span>
-        </div>
-        <div class="tier">
-          <div class="tier-num">2</div>
-          <h3>Bronze + Silver</h3>
-          <p>Parsed and cleansed. PII tokenized. Ready for analytics.</p>
-          <span class="tier-tech">Iceberg on S3</span>
-        </div>
-        <div class="tier">
-          <div class="tier-num">3</div>
-          <h3>Gold</h3>
-          <p>One golden record per person. Analytics warehouse reads from here.</p>
-          <span class="tier-tech">Snowflake</span>
-        </div>
-        <div class="tier">
-          <div class="tier-num">4</div>
-          <h3>Hot replica</h3>
-          <p>What the sign-up app reads. <strong>&lt; 10 ms reads.</strong></p>
-          <span class="tier-tech">Aurora Postgres</span>
-        </div>
-      </div>
-
-      <blockquote style="margin-top: 1em;">
-        Why a separate hot tier? <strong>Snowflake is built for big analytics queries, not for sub-second sign-up lookups.</strong>
-        Forcing the sign-up form to wait on Snowflake is the single most common mistake teams make.
-      </blockquote>
-      <div class="footer-slide-num">08 / 27</div>
-    </section>
-
-    <!-- ========================= 9. TWO INGEST PATHS ========================= -->
-    <section>
-      <h2>Two ingest paths — bulk and CDC</h2>
-      <div class="two-col">
-        <div class="col">
-          <h3>Bulk</h3>
-          <ul>
-            <li>Partners who can only send full snapshots</li>
-            <li>SFTP via AWS Transfer Family → S3 → EMR Serverless / Glue → Iceberg bronze</li>
-            <li>Scales to 50M rows/hour</li>
-            <li>Reconciliation pain at scale</li>
-          </ul>
-        </div>
-        <div class="col">
-          <h3>CDC <span class="pill pill-green">preferred</span></h3>
-          <ul>
-            <li>Partners who give us DB access</li>
-            <li>Debezium on MSK Connect → Kafka → silver via Spark Structured Streaming</li>
-            <li>Sub-minute end-to-end freshness</li>
-            <li>Row-level deletes propagate correctly</li>
-            <li>No "missing row in snapshot" reconciliation</li>
-          </ul>
-        </div>
-      </div>
-      <p style="margin-top: 0.8em;">
-        Contract clause: <em>"You can start with bulk; we expect you on CDC inside 12 months."</em>
-        That's the right hill to die on.
+      <h2>Demo architecture — what's actually live in AWS today</h2>
+      <p style="margin-top: 0; color: var(--lore-soft); font-size: 0.85em;">
+        A scoped subset of the full diagram. Same shapes, fewer pieces — what I deployed for this panel.
       </p>
-      <div class="footer-slide-num">09 / 27</div>
-    </section>
 
-    <!-- ========================= 10. FAILURE MODES ========================= -->
-    <section>
-      <h2>What could go wrong — and how we handle it</h2>
-      <table>
-        <thead><tr><th>If this happens…</th><th>…here's what we do</th></tr></thead>
-        <tbody>
-          <tr><td>Partner sends the wrong file (last quarter's snapshot)</td><td>Automated freshness + row-count checks → quarantine the file → alert the partner.</td></tr>
-          <tr><td>The AI mis-classifies a PII column</td><td>Every AI suggestion is reviewed by a human first. AWS Macie also scans the raw landing zone for any PII the contract didn't declare.</td></tr>
-          <tr><td>Entity resolution merges two different people</td><td>Auto-merge only above 95% confidence. Below that, a human reviews. Every merge is audited and reversible.</td></tr>
-          <tr><td>The PII vault has an outage during a bulk load</td><td>Tokenization requests queue to a durable buffer. Bulk lags but doesn't fail.</td></tr>
-          <tr><td>Bedrock throttles us during a spike</td><td>Reserved throughput keeps the hot path; the AI fallback handles the rest.</td></tr>
-          <tr><td>An engineer queries raw PII without a reason</td><td>Vault requires a logged purpose + second-engineer approval. Every access lands in an audit feed.</td></tr>
-          <tr><td>Snowflake cost overruns</td><td>Hard credit caps on every warehouse. Per-team query tagging. Weekly cost review.</td></tr>
-        </tbody>
-      </table>
-      <div class="footer-slide-num">10 / 27</div>
-    </section>
-
-    <!-- ========================= 11. STACK ========================= -->
-    <section>
-      <h2>Tech stack</h2>
-      <table>
-        <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
-        <tbody>
-          <tr><td>Object storage</td><td>S3 + Iceberg</td><td>Open table format; engine pluralism</td></tr>
-          <tr><td>Ingest (file)</td><td>AWS Transfer Family + EventBridge</td><td>Managed; HIPAA-eligible</td></tr>
-          <tr><td>Ingest (stream/CDC)</td><td>MSK + Debezium</td><td>Row-level CDC; replayable; granular</td></tr>
-          <tr><td>Orchestration</td><td><strong>Dagster Cloud</strong></td><td>Asset-aware; native data contracts; lineage</td></tr>
-          <tr><td>Transformation</td><td>dbt on <strong>Snowflake</strong></td><td>Compute/storage split; dynamic masking; data sharing</td></tr>
-          <tr><td>Data quality</td><td>Soda Core + Cloud</td><td>Declarative YAML; gates Dagster builds</td></tr>
-          <tr><td>PII vault</td><td><strong>Skyflow</strong></td><td>Format-preserving tokenization; policy-as-code</td></tr>
-          <tr><td>Encryption</td><td>AWS KMS — <em>per-partner CMK</em></td><td>Cryptographic shredding on offboarding</td></tr>
-          <tr><td>Entity resolution</td><td>Hybrid: Splink-style + Titan embeddings + Claude</td><td>Auditable; handles long tail</td></tr>
-          <tr><td>AI inference</td><td>Amazon Bedrock</td><td>HIPAA-friendly; no egress; model swap</td></tr>
-          <tr><td>IDV API</td><td>FastAPI on ECS Fargate + Aurora + OpenSearch</td><td>p99 &lt; 150ms</td></tr>
-          <tr><td>Observability</td><td><strong>Datadog</strong> + OpenLineage</td><td>Unified across SaaS + AWS</td></tr>
-        </tbody>
-      </table>
-      <div class="footer-slide-num">11 / 27</div>
-    </section>
-
-    <!-- ========================= 12. SNOWFLAKE OVER REDSHIFT ========================= -->
-    <section>
-      <h2>Why Snowflake (instead of Redshift)</h2>
-      <div class="three-col">
-        <div class="col" style="background: rgba(25,195,158,0.05); border: 1px solid var(--lore-mid); border-radius: 10px; padding: 1em;">
-          <div style="font-size: 1.7em; margin-bottom: 0.3em;">💸</div>
-          <h3>Pay only when used</h3>
-          <p style="margin: 0; color: var(--lore-soft);">Spin up a warehouse for the nightly build, kill it after. We're not paying for idle compute.</p>
+      <div class="arch-canvas">
+        <!-- Lane 1: Partner -->
+        <div class="lane">
+          <div class="lane-title">Partner</div>
+          <div class="svc">
+            <span class="svc-emoji">📁</span>
+            <span class="svc-text">Acme CSV<small>10 employees</small></span>
+          </div>
         </div>
-        <div class="col" style="background: rgba(25,195,158,0.05); border: 1px solid var(--lore-mid); border-radius: 10px; padding: 1em;">
-          <div style="font-size: 1.7em; margin-bottom: 0.3em;">🔒</div>
-          <h3>Built-in PII protection</h3>
-          <p style="margin: 0; color: var(--lore-soft);">Per-role data masking is native — analysts see year-of-birth only, the sign-up service sees the full date. No app changes needed.</p>
+
+        <!-- Lane 2: Ingest -->
+        <div class="lane">
+          <div class="lane-title">Ingest</div>
+          <div class="svc">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/amazons3.svg" alt="" />
+            <span class="svc-text">S3 raw<small>inbox/&lt;partner&gt;/</small></span>
+          </div>
+          <div class="svc">
+            <span class="svc-emoji">⚡</span>
+            <span class="svc-text">S3 event<small>ObjectCreated</small></span>
+          </div>
         </div>
-        <div class="col" style="background: rgba(25,195,158,0.05); border: 1px solid var(--lore-mid); border-radius: 10px; padding: 1em;">
-          <div style="font-size: 1.7em; margin-bottom: 0.3em;">🔗</div>
-          <h3>Share without copying</h3>
-          <p style="margin: 0; color: var(--lore-soft);">Partners can read a curated view of their own data inside their own warehouse. No S3 dumps, no nightly sync to maintain.</p>
+
+        <!-- Lane 3: Process -->
+        <div class="lane">
+          <div class="lane-title">Process</div>
+          <div class="svc">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/awslambda.svg" alt="" />
+            <span class="svc-text">file_processor λ<small>parse · upsert · invoke</small></span>
+          </div>
+          <div class="svc featured">
+            <span class="svc-emoji">🤖</span>
+            <span class="svc-text">schema_inference λ<small>→ Claude (Anthropic API)</small></span>
+          </div>
+        </div>
+
+        <!-- Lane 4: Store -->
+        <div class="lane">
+          <div class="lane-title">Store</div>
+          <div class="svc serve">
+            <span class="svc-emoji">🗄️</span>
+            <span class="svc-text">DynamoDB<small>golden records · GSI lookup_key</small></span>
+          </div>
+          <div class="svc">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/amazons3.svg" alt="" />
+            <span class="svc-text">S3 bronze<small>data + .schema.yaml sidecar</small></span>
+          </div>
+        </div>
+
+        <!-- Lane 5: Serve -->
+        <div class="lane">
+          <div class="lane-title">Serve</div>
+          <div class="svc serve">
+            <span class="svc-emoji">🌐</span>
+            <span class="svc-text">API Gateway HTTP<small>HTTPS · CORS</small></span>
+          </div>
+          <div class="svc serve">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/awslambda.svg" alt="" />
+            <span class="svc-text">IDV API λ<small>FastAPI · Mangum</small></span>
+          </div>
+          <div class="svc">
+            <span class="svc-emoji">📱</span>
+            <span class="svc-text">Mobile / partner UI<small>verify caller</small></span>
+          </div>
         </div>
       </div>
-      <div class="footer-slide-num">12 / 27</div>
-    </section>
 
-    <!-- ========================= 13. SKYFLOW OVER KMS-ONLY ========================= -->
-    <section>
-      <h2>Why a PII vault (instead of just AWS encryption)</h2>
-      <div class="two-col">
-        <div class="col">
-          <h3>What AWS alone gives you</h3>
-          <ul>
-            <li>Encryption when data is at rest</li>
-            <li>Automated scans that find unexpected PII</li>
-            <li>Column-level access controls</li>
-          </ul>
-          <p style="margin-top: 0.6em; color: var(--lore-soft);"><em>Necessary — but not enough on its own.</em></p>
-        </div>
-        <div class="col">
-          <h3>What Skyflow adds</h3>
-          <ul>
-            <li><strong>Lookalike tokens.</strong> Apps use a stand-in that has the same shape as the SSN — they never hold the real value.</li>
-            <li><strong>Match without revealing.</strong> Find the right record without ever decrypting the PII.</li>
-            <li><strong>Built-in approval flow.</strong> Anyone who wants to see the real value has to log a reason and get a second signoff.</li>
-            <li><strong>Compliance certs included.</strong> SOC 2 + HIPAA + PCI in one signed agreement.</li>
-          </ul>
-        </div>
-      </div>
-      <blockquote style="margin-top: 0.7em;">Buy the vault. Build the pipeline. <strong>Don't get those backwards.</strong></blockquote>
-      <div class="footer-slide-num">13 / 27</div>
-    </section>
+      <p style="text-align: center; margin: 0.8em 0 0; color: var(--lore-soft); font-size: 0.85em;">
+        Cut from production: SFTP/CDC ingest paths, Skyflow vault, Snowflake gold, Aurora hot replica, EMR Spark cleansing. Same shape; production is wider.
+      </p>
 
-    <!-- ========================= 14. THREE OTHER SUBSTITUTIONS ========================= -->
-    <section>
-      <h2>Three more deliberate choices</h2>
-      <div class="subst-grid">
-        <div class="subst-card">
-          <div class="pic">🎯</div>
-          <div class="name">Dagster</div>
-          <div class="vs">over AWS Step Functions / MWAA</div>
-          <p class="hero">Tracks data, not jobs.</p>
-          <p>Knows what data exists and when each piece needs refreshing — instead of just running scripts on a schedule.</p>
-        </div>
-        <div class="subst-card">
-          <div class="pic">🧊</div>
-          <div class="name">Apache Iceberg</div>
-          <div class="vs">over Delta Lake</div>
-          <p class="hero">No vendor lock-in.</p>
-          <p>Same data lake, readable by any engine — Snowflake, Spark, Trino, even DuckDB on a laptop. We can swap tools without re-copying data.</p>
-        </div>
-        <div class="subst-card">
-          <div class="pic">📡</div>
-          <div class="name">Datadog</div>
-          <div class="vs">over CloudWatch alone</div>
-          <p class="hero">One pane, every system.</p>
-          <p>AWS, Snowflake, Skyflow, Dagster — all in the same dashboard. When something breaks at 3am, on-call sees the full picture.</p>
-        </div>
-      </div>
-      <div class="footer-slide-num">14 / 27</div>
-    </section>
-
-    <!-- ========================= 15. WHY BEDROCK ========================= -->
-    <section>
-      <h2>Why Bedrock (vs. OpenAI direct)</h2>
-      <ul>
-        <li><strong>Same VPC, no egress.</strong> Critical for HIPAA — model traffic never leaves AWS.</li>
-        <li><strong>One BAA</strong> already in place at the AWS account level extends to Bedrock.</li>
-        <li><strong>Model swap.</strong> Same SDK; switch Claude → Llama → Mistral without rewrite.</li>
-        <li><strong>Provisioned throughput</strong> for predictable latency at high entity-res volume.</li>
-      </ul>
-      <blockquote>If we were a non-healthcare startup, OpenAI would be fine. We're in healthcare. Bedrock is the right answer.</blockquote>
-      <div class="footer-slide-num">15 / 27</div>
+      <div class="footer-slide-num">08 / 27</div>
     </section>
 
     <!-- ========================= 16. AI #1 SCHEMA INFERENCE ========================= -->
@@ -1229,42 +1063,45 @@
     <!-- ========================= 18. LIVE DEMO ========================= -->
     <section data-background-color="#0c2229">
       <div style="text-align: center;">
-        <h1 style="color: var(--lore-green); font-size: 2.8em; margin-bottom: 0.2em;">⏵ Live demo</h1>
-        <p style="color: var(--lore-soft); font-size: 1.15em; margin-top: 0.4em;">
-          10 minutes · live in AWS · real Bedrock calls
+        <h1 style="color: var(--lore-green); font-size: 2.6em; margin-bottom: 0.2em;">⏵ Live demo</h1>
+        <p style="color: var(--lore-soft); font-size: 1.1em; margin-top: 0.4em; font-style: italic;">
+          "Walk me through what happens when a new partner gets added."
+        </p>
+        <p style="color: var(--lore-soft); font-size: 0.95em; margin-top: 0.2em;">
+          ~7 minutes · real AWS · real Claude
         </p>
       </div>
 
-      <div style="margin: 1.4em auto 0; max-width: 88%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.7em;">
+      <div style="margin: 1.2em auto 0; max-width: 90%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.7em;">
         <div class="icon-card">
-          <div class="ic">🌐</div>
-          <h4>1. Live HTTPS URL</h4>
-          <p>Hit the API on AWS — not localhost. Real Lambda + API Gateway responding.</p>
+          <div class="ic">📁</div>
+          <h4>1. CSV lands in S3</h4>
+          <p>Acme drops their first employee file in <code>raw/inbox/acme-corp/</code>.</p>
         </div>
         <div class="icon-card">
-          <div class="ic">✅</div>
-          <h4>2. Three sign-up scenarios</h4>
-          <p>VERIFIED · INELIGIBLE · NOT_FOUND — all served from DynamoDB.</p>
-        </div>
-        <div class="icon-card">
-          <div class="ic">🗄️</div>
-          <h4>3. Show the records</h4>
-          <p>Pull up the DynamoDB console — the golden records the API just queried.</p>
+          <div class="ic">⚡</div>
+          <h4>2. Pipeline kicks off</h4>
+          <p>S3 event → Lambda. 10 records into DynamoDB, file into bronze.</p>
         </div>
         <div class="icon-card">
           <div class="ic">🤖</div>
-          <h4>4. Real Bedrock</h4>
-          <p>Send a sample partner CSV to Claude — get back a draft contract YAML.</p>
+          <h4>3. Claude drafts the contract</h4>
+          <p>schema_inference Lambda calls Anthropic API. Draft YAML beside the data.</p>
         </div>
         <div class="icon-card">
-          <div class="ic">📥</div>
-          <h4>5. File lands → DB updates</h4>
-          <p>Drop a CSV in S3. Watch Lambda parse it and upsert to DynamoDB live.</p>
+          <div class="ic">✅</div>
+          <h4>4. Acme employees verify</h4>
+          <p>Same IDV API a mobile app calls. Jin Park (CSV-only) → VERIFIED.</p>
         </div>
         <div class="icon-card">
-          <div class="ic">📊</div>
-          <h4>6. Latency in CloudWatch</h4>
-          <p>p99 graph in real time — operational maturity, visible.</p>
+          <div class="ic">🗄️</div>
+          <h4>5. Inspect DynamoDB</h4>
+          <p>15 records (5 seeded + 10 ingested). G-EEB5's <code>lookup_key</code> = the GSI fingerprint.</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic">⏱</div>
+          <h4>End to end ≈ 1 min</h4>
+          <p>From file drop to a verifiable employee. Same path, every partner, every file.</p>
         </div>
       </div>
 
@@ -1299,36 +1136,6 @@
       </blockquote>
 
       <div class="footer-slide-num">19 / 27</div>
-    </section>
-
-    <!-- ========================= 20. DUPLICATE DETECTION ========================= -->
-    <section>
-      <h2>Detecting "is this the same person?"</h2>
-      <p>We never trust a single rule. We triangulate two signals.</p>
-
-      <div class="signal-flow">
-        <div class="signal hard">
-          <h4>Hard signal</h4>
-          <p><strong>Same tokenized SSN</strong></p>
-          <small>Tokens are unique per person, so if two records share one, they're the same person. Rare and certain.</small>
-        </div>
-        <div class="converge-arrow">→</div>
-        <div class="signal soft">
-          <h4>Soft signal</h4>
-          <p><strong>Same DOB + name-sound + ZIP-prefix</strong></p>
-          <small>Catches typos, marriage names, "Bob vs Robert". Imperfect — needs a second look.</small>
-        </div>
-        <div class="verdict-box">
-          <strong>Hard match</strong> → auto-merge ·
-          <strong>Soft match alone</strong> → human review queue ·
-          <strong>Neither</strong> → new record
-        </div>
-      </div>
-
-      <blockquote style="margin-top: 1em;">
-        Pure rules miss 15–30% of real matches. Pure ML fails a HIPAA audit. <strong>Two signals + a human-in-the-loop wins on every axis.</strong>
-      </blockquote>
-      <div class="footer-slide-num">20 / 27</div>
     </section>
 
     <!-- ========================= 21. THE DATA CONTRACT ========================= -->
@@ -1418,58 +1225,6 @@
         SLOs without enforcement are theater.
       </blockquote>
       <div class="footer-slide-num">23 / 27</div>
-    </section>
-
-    <!-- ========================= 24. MIGRATION ========================= -->
-    <section>
-      <h2>Migration — phased rollout, ~9 months</h2>
-      <table>
-        <thead><tr><th>Phase</th><th>Weeks</th><th>Goal</th></tr></thead>
-        <tbody>
-          <tr><td><strong>0 · Discovery</strong></td><td>1–2</td><td>Read code. Interview PSMs. Pull tickets. <em>Don't build yet.</em></td></tr>
-          <tr><td>1 · Foundation</td><td>3–6</td><td>Infra plumbing. Synthetic partner end-to-end.</td></tr>
-          <tr><td>2 · Pilot dual-run</td><td>7–12</td><td>One real partner, new pipeline shadow-mode beside old. Reconcile nightly.</td></tr>
-          <tr><td>3 · Cut-over + expand</td><td>13–20</td><td>Pilot flips to new. Onboard 3–5 more partners.</td></tr>
-          <tr><td>4 · Full migration</td><td>21–32</td><td>Waves of 5. Decommission old.</td></tr>
-          <tr><td>5 · Hardening</td><td>33–40</td><td>Tune. Chaos test. SOC 2 dry-run.</td></tr>
-          <tr><td>6 · Steady state</td><td>ongoing</td><td>20% of every sprint to debt + reliability.</td></tr>
-        </tbody>
-      </table>
-      <p style="margin-top: 0.5em;"><strong>Two principles:</strong> dual-run-then-cutover · simplest partner first.</p>
-      <div class="footer-slide-num">24 / 27</div>
-    </section>
-
-    <!-- ========================= 25. COST ========================= -->
-    <section>
-      <h2>Cost — modeled at two scales</h2>
-      <table>
-        <thead><tr><th>Line</th><th>Launch · 1M members</th><th>Growth · 10M members</th></tr></thead>
-        <tbody>
-          <tr><td>AWS infra (S3, MSK, EMR, Aurora, ECS, EKS, KMS, Macie)</td><td>~$5,400/mo</td><td>~$16,400/mo</td></tr>
-          <tr><td>Snowflake</td><td>$3,000/mo</td><td>$14,000/mo</td></tr>
-          <tr><td>Skyflow</td><td>$2,000/mo</td><td>$7,500/mo</td></tr>
-          <tr><td>Bedrock (entity res adjudication is the line)</td><td>$1,200/mo</td><td>$11,000/mo</td></tr>
-          <tr><td>Datadog · Dagster Cloud · misc</td><td>$3,900/mo</td><td>$14,100/mo</td></tr>
-          <tr><td><strong>Total</strong></td><td><strong>~$15,500/mo</strong></td><td><strong>~$63,000/mo</strong></td></tr>
-          <tr><td><strong>Per member per month</strong></td><td><strong>$0.0155</strong></td><td><strong>$0.0063</strong></td></tr>
-        </tbody>
-      </table>
-      <p style="margin-top: 0.5em;">Bedrock cost levers if it diverges from forecast: switch most adjudications to <strong>Haiku</strong> (10× cheaper); pre-filter candidates more aggressively; cache embeddings.</p>
-      <div class="footer-slide-num">25 / 27</div>
-    </section>
-
-    <!-- ========================= 26. WHAT I'D DO DIFFERENTLY ========================= -->
-    <section>
-      <h2>What I'd do differently in your real environment</h2>
-      <ol>
-        <li><strong>Talk to partners first.</strong> Half this design is informed by guesses. Two weeks reading existing code and looking at five real partner files would change details.</li>
-        <li><strong>Build the migration plan with operations.</strong> The interesting risk isn't building the new system. It's running both in parallel without breaking IDV for live members.</li>
-        <li><strong>Treat AI as augmentation, never a gate.</strong> When the LLM returns garbage, a human gets paged with enough context to fix it in ten minutes. The schema-inference output is <em>always</em> reviewed before promotion. Always.</li>
-      </ol>
-      <p style="margin-top: 1em;"><strong>First 30 days:</strong> listening, reading, asking questions — not building.<br/>
-      <strong>First 90 days:</strong> the foundation phase from this plan, with the squad's input.<br/>
-      <strong>First 12 months:</strong> current state → target state with measurable improvements every quarter.</p>
-      <div class="footer-slide-num">26 / 27</div>
     </section>
 
     <!-- ========================= 27. CLOSE ========================= -->
